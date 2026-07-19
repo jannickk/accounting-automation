@@ -1,0 +1,105 @@
+{
+  "@odata.type": "Microsoft.Dynamics.CRM.EntityMetadata",
+  "SchemaName": "acc_attachment",
+  "DisplayName": { "LocalizedLabels": [ { "Label": "Attachment", "LanguageCode": 1033 } ] },
+  "DisplayCollectionName": { "LocalizedLabels": [ { "Label": "Attachments", "LanguageCode": 1033 } ] },
+  "Description": { "LocalizedLabels": [ { "Label": "Attachments and processing metadata", "LanguageCode": 1033 } ] },
+  "OwnershipType": "UserOwned",
+  "IsAuditEnabled": { "Value": true, "CanBeChanged": true },
+  "IsActivity": false,
+  "HasActivities": false,
+  "HasNotes": false,
+  "Attributes": [
+    {
+      "@odata.type": "Microsoft.Dynamics.CRM.LookupAttributeMetadata",
+      "SchemaName": "acc_emailid",
+      "RequiredLevel": { "Value": "ApplicationRequired", "CanBeChanged": true },
+      "DisplayName": { "LocalizedLabels": [ { "Label": "Email ID", "LanguageCode": 1033 } ] },
+      "Targets": [ "email" ]
+    },
+    {
+      "@odata.type": "Microsoft.Dynamics.CRM.LookupAttributeMetadata",
+      "SchemaName": "acc_isduplicateof",
+      "RequiredLevel": { "Value": "None", "CanBeChanged": true },
+      "DisplayName": { "LocalizedLabels": [ { "Label": "Is Duplicate Of Attachment(Hash)", "LanguageCode": 1033 } ] },
+      "Targets": [ "acc_attachment" ]
+    },
+    {
+      "@odata.type": "Microsoft.Dynamics.CRM.StringAttributeMetadata",
+      "SchemaName": "acc_hashid",
+      "RequiredLevel": { "Value": "ApplicationRequired", "CanBeChanged": true },
+      "DisplayName": { "LocalizedLabels": [ { "Label": "Hash ID", "LanguageCode": 1033 } ] },
+      "MaxLength": 200,
+      "FormatName": { "Value": "Text" },
+      "IsPrimaryName": true
+    },
+    {
+      "@odata.type": "Microsoft.Dynamics.CRM.BooleanAttributeMetadata",
+      "SchemaName": "acc_processeddocumentai",
+      "RequiredLevel": { "Value": "ApplicationRequired", "CanBeChanged": true },
+      "DisplayName": { "LocalizedLabels": [ { "Label": "Processed Document AI", "LanguageCode": 1033 } ] },
+      "OptionSet": {
+        "FalseOption": { "Value": 0, "Label": { "LocalizedLabels": [ { "Label": "False", "LanguageCode": 1033 } ] } },
+        "TrueOption": { "Value": 1, "Label": { "LocalizedLabels": [ { "Label": "True", "LanguageCode": 1033 } ] } }
+      }
+    },
+   {
+      "@odata.type": "Microsoft.Dynamics.CRM.DateTimeAttributeMetadata",
+      "AttributeType": "DateTime",
+      "AttributeTypeName": {"Value": "DateTimeType"},
+      "SchemaName": "acc_processeddatetime",
+      "DisplayName": { "LocalizedLabels": [ { "Label": "Processed DateTime", "LanguageCode": 1033}]},
+      "RequiredLevel": { "Value": "ApplicationRequired", "CanBeChanged": true}
+    },
+    {
+      "@odata.type": "Microsoft.Dynamics.CRM.StringAttributeMetadata",
+      "SchemaName": "acc_attachmentname",
+      "RequiredLevel": { "Value": "ApplicationRequired", "CanBeChanged": true },
+      "DisplayName": { "LocalizedLabels": [ { "Label": "Attachment Name", "LanguageCode": 1033 } ] },
+      "MaxLength": 500,
+      "FormatName": { "Value": "Text" }
+    },
+    {
+      "@odata.type": "Microsoft.Dynamics.CRM.StringAttributeMetadata",
+      "SchemaName": "acc_attachmenttype",
+      "RequiredLevel": { "Value": "ApplicationRequired", "CanBeChanged": true },
+      "DisplayName": { "LocalizedLabels": [ { "Label": "Attachment Type", "LanguageCode": 1033 } ] },
+      "MaxLength": 200,
+      "FormatName": { "Value": "Text" }
+    },
+    {
+      "@odata.type": "Microsoft.Dynamics.CRM.StringAttributeMetadata",
+      "SchemaName": "acc_storageaccounturi",
+      "RequiredLevel": { "Value": "ApplicationRequired", "CanBeChanged": true },
+      "DisplayName": { "LocalizedLabels": [ { "Label": "Storage Account Uri", "LanguageCode": 1033 } ] },
+      "MaxLength": 1000,
+      "FormatName": { "Value": "Text" }
+    },
+    {
+      "@odata.type": "Microsoft.Dynamics.CRM.StringAttributeMetadata",
+      "SchemaName": "acc_blobname",
+      "RequiredLevel": { "Value": "ApplicationRequired", "CanBeChanged": true },
+      "DisplayName": { "LocalizedLabels": [ { "Label": "Blob Name", "LanguageCode": 1033 } ] },
+      "MaxLength": 1000,
+      "FormatName": { "Value": "Text" }
+    },
+    {
+      "@odata.type": "Microsoft.Dynamics.CRM.BooleanAttributeMetadata",
+      "SchemaName": "acc_uploadedtodatev",
+      "RequiredLevel": { "Value": "ApplicationRequired", "CanBeChanged": true },
+      "DisplayName": { "LocalizedLabels": [ { "Label": "Uploaded To DATEV", "LanguageCode": 1033 } ] },
+      "OptionSet": {
+        "FalseOption": { "Value": 0, "Label": { "LocalizedLabels": [ { "Label": "False", "LanguageCode": 1033 } ] } },
+        "TrueOption": { "Value": 1, "Label": { "LocalizedLabels": [ { "Label": "True", "LanguageCode": 1033 } ] } }
+      }
+   },
+   {
+      "@odata.type": "Microsoft.Dynamics.CRM.DateTimeAttributeMetadata",
+      "AttributeType": "DateTime",
+      "AttributeTypeName": {"Value": "DateTimeType"},
+      "SchemaName": "acc_uploadeddatetime",
+      "DisplayName": { "LocalizedLabels": [ { "Label": "Uploaded DateTime", "LanguageCode": 1033}]},
+      "RequiredLevel": { "Value": "ApplicationRequired", "CanBeChanged": true}
+   }
+  ]
+}

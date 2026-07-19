@@ -1,0 +1,5 @@
+pydantic
+PowerPlatform-Dataverse-Client
+azure-identity
+sqlmodel
+pydantic-settings

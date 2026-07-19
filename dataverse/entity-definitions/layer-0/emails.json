@@ -1,0 +1,191 @@
+{
+  "@odata.type": "Microsoft.Dynamics.CRM.EntityMetadata",
+  "SchemaName": "acc_email",
+  "DisplayName": {
+    "LocalizedLabels": [
+      { "Label": "Email", "LanguageCode": 1033 }
+    ]
+  },
+  "DisplayCollectionName": {
+    "LocalizedLabels": [
+      { "Label": "Emails", "LanguageCode": 1033 }
+    ]
+  },
+  "Description": {
+    "LocalizedLabels": [
+      { "Label": "Storage for ingested Outlook emails", "LanguageCode": 1033 }
+    ]
+  },
+  "OwnershipType": "UserOwned",
+  "IsAuditEnabled": { "Value": true, "CanBeChanged": true },
+  "IsActivity": false,
+  "HasActivities": false,
+  "HasNotes": false,
+  "Attributes": [
+    {
+      "@odata.type": "Microsoft.Dynamics.CRM.StringAttributeMetadata",
+      "SchemaName": "acc_outlook_emailid",
+      "RequiredLevel": { "Value": "ApplicationRequired", "CanBeChanged": true },
+      "DisplayName": { "LocalizedLabels": [ { "Label": "Email ID", "LanguageCode": 1033 } ] },
+      "MaxLength": 200,
+      "FormatName": { "Value": "Text" }
+    },
+    {
+      "@odata.type": "Microsoft.Dynamics.CRM.LookupAttributeMetadata",
+      "SchemaName": "acc_isduplicateof",
+      "RequiredLevel": { "Value": "None", "CanBeChanged": true },
+      "DisplayName": { "LocalizedLabels": [ { "Label": "Is Duplicate Of Email(Hash)", "LanguageCode": 1033 } ] },
+      "Targets": [ "acc_email" ]
+    },
+    {
+      "@odata.type": "Microsoft.Dynamics.CRM.StringAttributeMetadata",
+      "SchemaName": "acc_subject",
+      "RequiredLevel": { "Value": "None", "CanBeChanged": true },
+      "DisplayName": { "LocalizedLabels": [ { "Label": "Subject", "LanguageCode": 1033 } ] },
+      "MaxLength": 500,
+      "FormatName": { "Value": "Text" }
+    },
+    {
+      "@odata.type": "Microsoft.Dynamics.CRM.IntegerAttributeMetadata",
+      "SchemaName": "acc_numofattachments",
+      "RequiredLevel": { "Value": "None", "CanBeChanged": true },
+      "DisplayName": { "LocalizedLabels": [ { "Label": "Number Of Attachments", "LanguageCode": 1033 } ] }
+    },
+   {
+      "@odata.type": "Microsoft.Dynamics.CRM.DateTimeAttributeMetadata",
+      "AttributeType": "DateTime",
+      "AttributeTypeName": {
+        "Value": "DateTimeType"
+      },
+      "SchemaName": "acc_receiveddatetime",
+      "DisplayName": {
+        "LocalizedLabels": [
+          {
+            "Label": "Received DateTime", "LanguageCode": 1033
+          }
+        ]
+      },
+      "RequiredLevel": {
+        "Value": "ApplicationRequired",
+        "CanBeChanged": true
+      }
+    },
+    {
+      "@odata.type": "Microsoft.Dynamics.CRM.IntegerAttributeMetadata",
+      "AttributeType": "DateTime",
+      "AttributeTypeName": { "Value": "DateTimeType" },
+      "SchemaName": "acc_receiveddatetime_year",
+      "DisplayName": { "LocalizedLabels": [ { "Label": "Received DateTime Year", "LanguageCode": 1033 } ] },
+      "RequiredLevel": { "Value": "ApplicationRequired", "CanBeChanged": true }
+    },
+    {
+      "@odata.type": "Microsoft.Dynamics.CRM.IntegerAttributeMetadata",
+      "AttributeType": "DateTime",
+      "AttributeTypeName": { "Value": "DateTimeType" },
+      "SchemaName": "acc_receiveddatetime_month",
+      "DisplayName": { "LocalizedLabels": [ { "Label": "Received DateTime Month", "LanguageCode": 1033 } ] },
+      "RequiredLevel": { "Value": "ApplicationRequired", "CanBeChanged": true }
+    },
+   {
+      "@odata.type": "Microsoft.Dynamics.CRM.DateTimeAttributeMetadata",
+      "AttributeType": "DateTime",
+      "AttributeTypeName": {"Value": "DateTimeType"},
+      "SchemaName": "acc_ingesteddatetime",
+      "DisplayName": { "LocalizedLabels": [ { "Label": "Ingested DateTime", "LanguageCode": 1033}]},
+      "RequiredLevel": { "Value": "ApplicationRequired", "CanBeChanged": true}
+   },
+   {
+      "@odata.type": "Microsoft.Dynamics.CRM.DateTimeAttributeMetadata",
+      "AttributeType": "DateTime",
+      "AttributeTypeName": {
+        "Value": "DateTimeType"
+      },
+      "SchemaName": "acc_processeddatetime",
+      "DisplayName": {
+        "LocalizedLabels": [
+          {
+            "Label": "Processed DateTime", "LanguageCode": 1033
+          }
+        ]
+      },
+      "RequiredLevel": {
+        "Value": "ApplicationRequired",
+        "CanBeChanged": true
+      }
+    },
+    {
+      "@odata.type": "Microsoft.Dynamics.CRM.StringAttributeMetadata",
+      "SchemaName": "acc_hashid",
+      "RequiredLevel": { "Value": "ApplicationRequired", "CanBeChanged": true },
+      "DisplayName": { "LocalizedLabels": [ { "Label": "Hash ID", "LanguageCode": 1033 } ] },
+      "MaxLength": 200,
+      "FormatName": { "Value": "Text" },
+      "IsPrimaryName": true
+    },
+
+    {
+      "@odata.type": "Microsoft.Dynamics.CRM.StringAttributeMetadata",
+      "SchemaName": "acc_sender_name",
+      "RequiredLevel": { "Value": "None", "CanBeChanged": true },
+      "DisplayName": { "LocalizedLabels": [ { "Label": "Sender Name", "LanguageCode": 1033 } ] },
+      "MaxLength": 250,
+      "FormatName": { "Value": "Text" }
+    },
+    {
+      "@odata.type": "Microsoft.Dynamics.CRM.StringAttributeMetadata",
+      "SchemaName": "acc_sender_address",
+      "RequiredLevel": { "Value": "None", "CanBeChanged": true },
+      "DisplayName": { "LocalizedLabels": [ { "Label": "Sender Address", "LanguageCode": 1033 } ] },
+      "MaxLength": 320,
+      "FormatName": { "Value": "Text" }
+    },
+    {
+      "@odata.type": "Microsoft.Dynamics.CRM.StringAttributeMetadata",
+      "SchemaName": "acc_from_name",
+      "RequiredLevel": { "Value": "None", "CanBeChanged": true },
+      "DisplayName": { "LocalizedLabels": [ { "Label": "From Name", "LanguageCode": 1033 } ] },
+      "MaxLength": 250,
+      "FormatName": { "Value": "Text" }
+    },
+    {
+      "@odata.type": "Microsoft.Dynamics.CRM.StringAttributeMetadata",
+      "SchemaName": "acc_from_address",
+      "RequiredLevel": { "Value": "None", "CanBeChanged": true },
+      "DisplayName": { "LocalizedLabels": [ { "Label": "From Address", "LanguageCode": 1033 } ] },
+      "MaxLength": 320,
+      "FormatName": { "Value": "Text" }
+    },
+    {
+      "@odata.type": "Microsoft.Dynamics.CRM.StringAttributeMetadata",
+      "SchemaName": "acc_torecipients_json",
+      "RequiredLevel": { "Value": "None", "CanBeChanged": true },
+      "DisplayName": { "LocalizedLabels": [ { "Label": "To Recipients (JSON)", "LanguageCode": 1033 } ] },
+      "FormatName": { "Value": "TextArea" },
+      "MaxLength": 4000
+    },
+    {
+      "@odata.type": "Microsoft.Dynamics.CRM.StringAttributeMetadata",
+      "SchemaName": "acc_body_contenttype",
+      "RequiredLevel": { "Value": "None", "CanBeChanged": true },
+      "DisplayName": { "LocalizedLabels": [ { "Label": "Body Content Type", "LanguageCode": 1033 } ] },
+      "MaxLength": 100,
+      "FormatName": { "Value": "Text" }
+    },
+    {
+      "@odata.type": "Microsoft.Dynamics.CRM.StringAttributeMetadata",
+      "SchemaName": "acc_body_contentbytes_b64",
+      "RequiredLevel": { "Value": "None", "CanBeChanged": true },
+      "DisplayName": { "LocalizedLabels": [ { "Label": "Body Content Bytes (Base64)", "LanguageCode": 1033 } ] },
+      "FormatName": { "Value": "TextArea" },
+      "MaxLength": 4000
+    },
+    {
+      "@odata.type": "Microsoft.Dynamics.CRM.StringAttributeMetadata",
+      "SchemaName": "acc_sender_json",
+      "RequiredLevel": { "Value": "None", "CanBeChanged": true },
+      "DisplayName": { "LocalizedLabels": [ { "Label": "Sender (raw JSON)", "LanguageCode": 1033 } ] },
+      "FormatName": { "Value": "TextArea" },
+      "MaxLength": 4000
+    }
+  ]
+}

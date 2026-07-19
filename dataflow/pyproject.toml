@@ -1,0 +1,49 @@
+[build-system]
+requires = ["setuptools>=65.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "accounts_payable_automation"
+version = "0.1.0"
+description = "Dataflow package containing the accounting automation source modules."
+readme = "README.md"
+requires-python = ">=3.11"
+authors = [
+  { name = "Accounting Automation" }
+]
+keywords = ["accounting", "dataverse", "google-cloud", "dataflow", "automation"]
+classifiers = [
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Operating System :: OS Independent"
+]
+
+dependencies = [
+  "fastapi",
+  "uvicorn",
+  "google-cloud-bigquery",
+  "google-cloud-storage",
+  "google-auth",
+  "aiohttp",
+  "google-cloud-documentai",
+  "pydantic",
+  "pydantic-settings",
+  "PowerPlatform-Dataverse-Client",
+  "azure-identity",
+  "sqlmodel"
+]
+
+[project.optional-dependencies]
+tests = [
+  "pytest",
+  "pytest-asyncio"
+]
+
+[tool.setuptools]
+package-dir = { "" = "src" }
+
+[tool.setuptools.packages.find]
+where = [
+        "src"
+        ]
+include = ["*"]

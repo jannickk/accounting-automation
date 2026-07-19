@@ -1,0 +1,13 @@
+FROM python:3.13-slim
+
+WORKDIR /app
+
+# Copy requirements and install dependencies
+COPY src/online-exchange-to-storage-bucket/requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy application source code
+COPY src/online-exchange-to-storage-bucket/ .
+
+
+CMD ["python", "main.py"]
