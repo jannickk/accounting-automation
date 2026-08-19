@@ -21,6 +21,14 @@
   "IsActivity": false,
   "HasActivities": false,
   "HasNotes": false,
+  "Keys": [
+    {
+      "@odata.type": "Microsoft.Dynamics.CRM.EntityKeyMetadata",
+      "SchemaName": "acc_emailidkey",
+      "DisplayName": { "LocalizedLabels": [ { "Label": "Email ID Alternate Key", "LanguageCode": 1033 } ] },
+      "KeyAttributes": [ "acc_email_alternatekey" ]
+    }
+  ],
   "Attributes": [
     {
       "@odata.type": "Microsoft.Dynamics.CRM.StringAttributeMetadata",
@@ -43,7 +51,8 @@
       "RequiredLevel": { "Value": "None", "CanBeChanged": true },
       "DisplayName": { "LocalizedLabels": [ { "Label": "Subject", "LanguageCode": 1033 } ] },
       "MaxLength": 500,
-      "FormatName": { "Value": "Text" }
+      "FormatName": { "Value": "Text" },
+      "IsPrimaryName": true
     },
     {
       "@odata.type": "Microsoft.Dynamics.CRM.IntegerAttributeMetadata",
@@ -119,8 +128,15 @@
       "RequiredLevel": { "Value": "ApplicationRequired", "CanBeChanged": true },
       "DisplayName": { "LocalizedLabels": [ { "Label": "Hash ID", "LanguageCode": 1033 } ] },
       "MaxLength": 200,
-      "FormatName": { "Value": "Text" },
-      "IsPrimaryName": true
+      "FormatName": { "Value": "Text" }
+    },
+    {
+      "@odata.type": "Microsoft.Dynamics.CRM.StringAttributeMetadata",
+      "SchemaName": "acc_email_alternatekey",
+      "RequiredLevel": { "Value": "ApplicationRequired", "CanBeChanged": true },
+      "DisplayName": { "LocalizedLabels": [ { "Label": "Email ID", "LanguageCode": 1033 } ] },
+      "MaxLength": 200,
+      "FormatName": { "Value": "Text" }
     },
 
     {

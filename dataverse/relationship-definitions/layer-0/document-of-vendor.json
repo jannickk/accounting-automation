@@ -1,0 +1,28 @@
+{
+  "@odata.type": "Microsoft.Dynamics.CRM.OneToManyRelationshipMetadata",
+  "ReferencedEntity": "acc_creditor",
+  "ReferencingEntity": "acc_document",
+  "SchemaName": "acc_document_of_creditor",
+  "Lookup": {
+    "AttributeType": "Lookup",
+    "SchemaName": "acc_creditorId",
+    "RequiredLevel": {
+      "Value": "ApplicationRequired",
+      "CanBeChanged": true
+    },
+    "DisplayName": {
+      "LocalizedLabels": [ 
+        { "Label": "Creditor", "LanguageCode": 1033 }
+       ]
+    },
+    "Description": {  
+        "LocalizedLabels": [  
+            {  
+            "@odata.type": "Microsoft.Dynamics.CRM.LocalizedLabel",  
+            "Label": "The Creditor from which the documents stems",  
+            "LanguageCode": 1033  
+            }  
+        ]
+    }  
+  }
+}

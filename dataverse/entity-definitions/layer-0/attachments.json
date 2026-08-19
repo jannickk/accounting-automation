@@ -9,20 +9,22 @@
   "IsActivity": false,
   "HasActivities": false,
   "HasNotes": false,
+  "Keys": [
+    {
+      "@odata.type": "Microsoft.Dynamics.CRM.EntityKeyMetadata",
+      "SchemaName": "acc_attachmentidkey",
+      "DisplayName": { "LocalizedLabels": [ { "Label": "Attachment ID Alternate Key", "LanguageCode": 1033 } ] },
+      "KeyAttributes": [ "acc_attachment_alternatekey" ]
+    }
+  ],
   "Attributes": [
     {
-      "@odata.type": "Microsoft.Dynamics.CRM.LookupAttributeMetadata",
-      "SchemaName": "acc_emailid",
+      "@odata.type": "Microsoft.Dynamics.CRM.StringAttributeMetadata",
+      "SchemaName": "acc_attachment_alternatekey",
       "RequiredLevel": { "Value": "ApplicationRequired", "CanBeChanged": true },
-      "DisplayName": { "LocalizedLabels": [ { "Label": "Email ID", "LanguageCode": 1033 } ] },
-      "Targets": [ "email" ]
-    },
-    {
-      "@odata.type": "Microsoft.Dynamics.CRM.LookupAttributeMetadata",
-      "SchemaName": "acc_isduplicateof",
-      "RequiredLevel": { "Value": "None", "CanBeChanged": true },
-      "DisplayName": { "LocalizedLabels": [ { "Label": "Is Duplicate Of Attachment(Hash)", "LanguageCode": 1033 } ] },
-      "Targets": [ "acc_attachment" ]
+      "DisplayName": { "LocalizedLabels": [ { "Label": "Attachment ID", "LanguageCode": 1033 } ] },
+      "MaxLength": 200,
+      "FormatName": { "Value": "Text" }
     },
     {
       "@odata.type": "Microsoft.Dynamics.CRM.StringAttributeMetadata",
@@ -30,8 +32,7 @@
       "RequiredLevel": { "Value": "ApplicationRequired", "CanBeChanged": true },
       "DisplayName": { "LocalizedLabels": [ { "Label": "Hash ID", "LanguageCode": 1033 } ] },
       "MaxLength": 200,
-      "FormatName": { "Value": "Text" },
-      "IsPrimaryName": true
+      "FormatName": { "Value": "Text" }
     },
     {
       "@odata.type": "Microsoft.Dynamics.CRM.BooleanAttributeMetadata",
@@ -57,7 +58,8 @@
       "RequiredLevel": { "Value": "ApplicationRequired", "CanBeChanged": true },
       "DisplayName": { "LocalizedLabels": [ { "Label": "Attachment Name", "LanguageCode": 1033 } ] },
       "MaxLength": 500,
-      "FormatName": { "Value": "Text" }
+      "FormatName": { "Value": "Text" },
+      "IsPrimaryName": true
     },
     {
       "@odata.type": "Microsoft.Dynamics.CRM.StringAttributeMetadata",

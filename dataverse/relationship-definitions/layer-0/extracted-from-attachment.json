@@ -1,0 +1,27 @@
+{
+  "@odata.type": "Microsoft.Dynamics.CRM.OneToManyRelationshipMetadata",
+  "ReferencedEntity": "acc_attachment",
+  "ReferencingEntity": "acc_document",
+  "SchemaName": "acc_extracted_from_attachment",
+  "Lookup": {
+    "AttributeType": "Lookup",
+    "SchemaName": "acc_attachmentId",
+    "RequiredLevel": {
+      "Value": "ApplicationRequired",
+      "CanBeChanged": true
+    },
+    "DisplayName": {
+      "LocalizedLabels": [ { "Label": "Attachment", "LanguageCode": 1033 } ]
+    },
+    "Description": {  
+        "@odata.type": "Microsoft.Dynamics.CRM.Label",  
+        "LocalizedLabels": [  
+            {  
+            "@odata.type": "Microsoft.Dynamics.CRM.LocalizedLabel",  
+            "Label": "The Attachment from which the document data are extracted ",  
+            "LanguageCode": 1033  
+            }  
+        ]
+    }  
+  }
+}

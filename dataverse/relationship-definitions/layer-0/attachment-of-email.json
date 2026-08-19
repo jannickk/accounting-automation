@@ -1,0 +1,27 @@
+{
+  "@odata.type": "Microsoft.Dynamics.CRM.OneToManyRelationshipMetadata",
+  "ReferencedEntity": "acc_email",
+  "ReferencingEntity": "acc_attachment",
+  "SchemaName": "acc_attachment_of_email",
+  "Lookup": {
+    "AttributeType": "Lookup",
+    "SchemaName": "acc_emailId",
+    "RequiredLevel": {
+      "Value": "ApplicationRequired",
+      "CanBeChanged": true
+    },
+    "DisplayName": {
+      "LocalizedLabels": [ { "Label": "Email ID", "LanguageCode": 1033 } ]
+    },
+    "Description": {  
+        "@odata.type": "Microsoft.Dynamics.CRM.Label",  
+        "LocalizedLabels": [  
+            {  
+            "@odata.type": "Microsoft.Dynamics.CRM.LocalizedLabel",  
+            "Label": "Attachmentof Email",  
+            "LanguageCode": 1033  
+            }  
+        ]
+    }  
+  }
+}

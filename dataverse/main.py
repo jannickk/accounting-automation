@@ -72,6 +72,7 @@ if __name__=="__main__":
 
     base_dir = os.path.dirname(os.path.abspath(__file__))
     entity_definitions_dir = os.path.join(base_dir, "entity-definitions")
+    relationship_definitions_dir = os.path.join(base_dir, "relationship-definitions")
     entities_dir = os.path.join(base_dir, "entities")
 
     if os.path.exists(entity_definitions_dir) and os.path.isdir(entity_definitions_dir):
@@ -91,6 +92,25 @@ if __name__=="__main__":
                     text = f.read()
                     entity = json.loads(text)
                     res = utils.upsert_entity_definition(entity, solution_to_create["uniquename"])
+
+    
+    if os.path.exists(relationship_definitions_dir) and os.path.isdir(relationship_definitions_dir):
+
+        folders:list[str] = os.listdir(relationship_definitions_dir)
+
+        # Sort so that we create entities in the correct order
+        folders.sort()
+
+        for folder in folders:  
+
+            files = glob.glob(os.path.join(relationship_definitions_dir, folder, "*.json"))
+
+            for file in files:
+
+                with open(file, "r", encoding="utf-8") as f:
+                    text = f.read()
+                    entity = json.loads(text)
+                    res = utils.upsert_relationship_definition(entity, solution_to_create["uniquename"])
 
     if os.path.exists(entities_dir) and os.path.isdir(entities_dir):
 

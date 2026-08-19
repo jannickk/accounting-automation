@@ -208,62 +208,139 @@ def upsert_entity_definition(entity_definition:dict, solution_unique_name: str =
         Uses `client` for querying existing metadata and the module `config`/`credential`
         to build a session for create/update calls.
     """
- 
-    schema_name = entity_definition.get("SchemaName") or entity_definition.get("LogicalName")
 
+    if entity_definition["@odata.type"]== "Microsoft.Dynamics.CRM.EntityMetadata":
+
+        schema_name = entity_definition.get("SchemaName") or entity_definition.get("LogicalName")
+
+        if not schema_name:
+
+            raise ValueError("Entity JSON must include a SchemaName or LogicalName")
+
+        get_endpoint= config.ENVIRONMENT_URL + f"/api/data/v9.2/EntityDefinitions?$filter=LogicalName%20eq%20'{schema_name}'"
+
+        session = requests.Session()
+        session.headers.update(get_request_headers(solution_unique_name))
+
+        resp = session.get(get_endpoint)
+
+        session = requests.Session()
+
+        session.headers.update(get_request_headers(solution_unique_name))
+
+        env_url = config.ENVIRONMENT_URL
+
+        if len(resp.json()["value"])==0:
+
+            print(f"No existing EntityDefinition found with schema name {schema_name}. Creating new EntityDefinition.")
+
+            endpoint = f"{env_url}/api/data/v9.2/EntityDefinitions"
+
+            resp = session.post(endpoint, json=entity_definition)
+
+            try:
+                resp.raise_for_status()
+            except Exception:
+
+                print(f"Failed to create EntityDefinition with schema name {schema_name}. Response: {resp.text}")
+                return {"action": "create_failed", "id": None, "response": resp.text}
+                    # re-query to obtain metadata id
+            escaped_schema_name = schema_name.replace("'", "''")
+            metadata_lookup_resp = session.get(
+                f"{env_url}/api/data/v9.2/EntityDefinitions?$filter=LogicalName%20eq%20'{escaped_schema_name}'"
+            )
+            metadata_lookup_resp.raise_for_status()
+            metadata_items = metadata_lookup_resp.json().get("value", [])
+            created_id = None if not metadata_items else str(metadata_items[0].get("MetadataId"))
+
+            print(f"Created EntityDefinition with schema name {schema_name} and MetadataId {created_id}")
+
+            if len(entity_definition.get("Keys", []))> 0:
+                print(f"EntityDefinition {schema_name} has Keys defined, Going in create keys in second step ")
+
+                for key in entity_definition.get("Keys", []):
+                    key_payload = {
+                        "@odata.type": "#Microsoft.Dynamics.CRM.EntityKeyMetadata",
+                        "SchemaName": key["SchemaName"],
+                        "LogicalName": key.get("LogicalName", key["SchemaName"]),
+                        "DisplayName": key.get("DisplayName", {"LocalizedLabels": [{"Label": key["SchemaName"], "LanguageCode": 1033}]}),
+                        "KeyAttributes": key["KeyAttributes"]
+                    }
+                    key_endpoint = f"{env_url}/api/data/v9.2/EntityDefinitions({created_id})/Keys"
+                    key_resp = session.post(key_endpoint, json=key_payload)
+                    try:
+                        key_resp.raise_for_status()
+                        print(f"Created Key {key['SchemaName']} for EntityDefinition {schema_name}")
+                    except Exception:
+                        print(f"Failed to create Key {key['SchemaName']} for EntityDefinition {schema_name}. Response: {key_resp.text}")
+        
+
+                    print("Successfully created Keys for EntityDefinition " + schema_name + " with response: " + key_resp.text)
+
+            ## Even when keys are defined the schema they are ignored
+
+        else:
+            
+            print(f"Existing EntityDefinition found with schema name {schema_name}. Updating existing EntityDefinition.")
+
+
+            ## This justs sync the EntityMetadata but does not handle addition/deletion of attributes, which would require additional logic to compare existing attributes with the provided schema and make additional API calls to add/delete attributes as needed.
+            sync_entity_attributes_with_schema(schema_name, entity_definition, solution_unique_name) 
+   
+
+    else:
+
+        print("JSON file is not an entity definition")
+
+def upsert_relationship_definition(relationship_definition:dict, solution_unique_name: str = None) -> Dict[str, Any]:
+
+    schema_name = relationship_definition.get("SchemaName")
+    
     if not schema_name:
-
-        raise ValueError("Entity JSON must include a SchemaName or LogicalName")
-
-    get_endpoint= config.ENVIRONMENT_URL + f"/api/data/v9.2/EntityDefinitions?$filter=LogicalName%20eq%20'{schema_name}'"
-
+    
+        raise ValueError("Relationship JSON must include a SchemaName")
+    
+    get_endpoint= config.ENVIRONMENT_URL + f"/api/data/v9.2/RelationshipDefinitions?$filter=SchemaName%20eq%20'{schema_name}'"
+    
     session = requests.Session()
     session.headers.update(get_request_headers(solution_unique_name))
-
+    
     resp = session.get(get_endpoint)
 
-    print(f"Querying for existing EntityDefinition with schema name {schema_name} returned {resp.status_code} with response: {resp.text}")
-
-    session = requests.Session()
-
-    session.headers.update(get_request_headers(solution_unique_name))
-
-    env_url = config.ENVIRONMENT_URL
-
+    print("obtained the following response from the relationship endpoint")
+    print(resp.json())
+    
     if len(resp.json()["value"])==0:
-
-        print(f"No existing EntityDefinition found with schema name {schema_name}. Creating new EntityDefinition.")
-
-        endpoint = f"{env_url}/api/data/v9.2/EntityDefinitions"
-
-        resp = session.post(endpoint, json=entity_definition)
-
+    
+        print(f"No existing Realtionship Deinfition found with schema name {schema_name}. Creating new Relationship Definition.")
+    
+        endpoint = f"{config.ENVIRONMENT_URL}/api/data/v9.2/RelationshipDefinitions"
+    
+        resp = session.post(endpoint, json=relationship_definition)
+    
         try:
+
             resp.raise_for_status()
+
         except Exception:
-
-            print(f"Failed to create EntityDefinition with schema name {schema_name}. Response: {resp.text}")
-            return {"action": "create_failed", "id": None, "response": resp.text}
-                # re-query to obtain metadata id
-        df2 = (
-                    client.query.builder("EntityDefinitions")
-                    .select("MetadataId")
-                    .where(col("SchemaName") == schema_name)
-                    .top(1)
-                    .to_dataframe()
-                )
-        created_id = None if df2.empty else str(df2["MetadataId"].iloc[0])
-
-        print(f"Created EntityDefinition with schema name {schema_name} and MetadataId {created_id}")
-    else:
+    
+            print(f"Failed to create RelationshipDefinition with schema name {schema_name}. Response: {resp.text}")
+    
         
-        print(f"Existing EntityDefinition found with schema name {schema_name}. Updating existing EntityDefinition.")
+        # re-query to obtain metadata id
+        escaped_schema_name = schema_name.replace("'", "''")
+        metadata_lookup_resp = session.get(f"{config.ENVIRONMENT_URL}/api/data/v9.2/RelationshipDefinitions?$filter=SchemaName%20eq%20'{escaped_schema_name}'")
+        metadata_lookup_resp.raise_for_status()
+        metadata_items = metadata_lookup_resp.json().get("value", [])
+        created_id = None if not metadata_items else str(metadata_items[0].get("MetadataId"))
+    
+        print(f"Created EntityDefinition with schema name {schema_name} and MetadataId {created_id}")
 
+    else:
 
-    ## This justs sync the EntityMetadata but does not handle addition/deletion of attributes, which would require additional logic to compare existing attributes with the provided schema and make additional API calls to add/delete attributes as needed.
-    sync_entity_attributes_with_schema(schema_name, entity_definition, solution_unique_name) 
-   
-       
+        print("Relationhsip Definition already exists")
+    
+    
 
 def process_entity_definitions_folder(client, folder_path: str = None, solution_unique_name: str = None) -> Dict[str, Dict[str, Any]]:
     """Process all .json files in the entity-definitions folder and upsert them.
@@ -277,7 +354,9 @@ def process_entity_definitions_folder(client, folder_path: str = None, solution_
     for path in glob.glob(os.path.join(folder_path, "*.json")):
         
         with open(path, "r", encoding="utf-8") as fh:
+
             text = fh.read()
+
             try:
                 res = upsert_entity_definition(client, text, solution_unique_name)
             except Exception as e:
@@ -317,7 +396,22 @@ def sync_entity_attributes_with_schema(entity_logical_name: str, entity_definiti
 
     current_attrs = attr_resp.json().get('value', [])
 
-    current_attr_names = {a['LogicalName'] for a in current_attrs}
+    current_attrs_without_lookups = []
+    for a in current_attrs:
+
+        if "@odata.type" in a.keys():
+
+            if not "Microsoft.Dynamics.CRM.LookupAttributeMetadata" in a["@odata.type"]:
+
+                current_attrs_without_lookups.append(a)
+
+        else:
+
+            current_attrs_without_lookups.append(a)
+  
+    # Exclude LookupAttribute Metadata because they are created by creating relationships
+
+    current_attr_names = {a['LogicalName'] for a in current_attrs_without_lookups}
 
     schema_attr_names = {a['LogicalName'] if 'LogicalName' in a else a.get('SchemaName') for a in entity_definition.get('Attributes', [])}
 
@@ -344,7 +438,7 @@ def sync_entity_attributes_with_schema(entity_logical_name: str, entity_definiti
             print(f"Failed to add attribute {attr_name}: {create_resp.text}")
 
     # 4. Delete attributes not in schema
-    for attr in current_attrs:
+    for attr in current_attrs_without_lookups:
 
         print("checking attribute " + attr['LogicalName'] + " in entity " + entity_logical_name)
         if attr['LogicalName'] not in schema_attr_names:
