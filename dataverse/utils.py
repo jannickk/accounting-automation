@@ -334,7 +334,7 @@ def upsert_relationship_definition(relationship_definition:dict, solution_unique
         metadata_items = metadata_lookup_resp.json().get("value", [])
         created_id = None if not metadata_items else str(metadata_items[0].get("MetadataId"))
     
-        print(f"Created EntityDefinition with schema name {schema_name} and MetadataId {created_id}")
+        print(f"Created Relationship Definition with schema name {schema_name} and MetadataId {created_id}")
 
     else:
 

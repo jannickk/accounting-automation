@@ -19,3 +19,4 @@ azure-storage-blob
 azure-storage-file-datalake
 PowerPlatform-Dataverse-Client
 pytest
+PowerPlatform-Dataverse-Client[async]

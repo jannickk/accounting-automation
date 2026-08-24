@@ -12,7 +12,7 @@ class ISO8601(BaseModel):
 
   @field_validator('value', mode='before')  
   @classmethod
-  def is_even(cls, value:str) -> str:
+  def is_correct_iso8601_format(cls, value:str) -> str:
     if isinstance(value, str):
         try:
           datetime.datetime.fromisoformat(value)

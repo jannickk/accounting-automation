@@ -114,12 +114,15 @@ async def get_checkpoint_from_dataverse(config: Config)->ISO8601:
     logger.info(f"Fetched {len(df)} records from Dataverse for checkpoint calculation")
     
     if df.empty:
+
         checkpoint = ISO8601(value="2025-11-25T10:00:00Z")
     else:
+
         df = df.sort_values(by="acc_receiveddatetime", ascending=False)
+
         checkpoint = ISO8601(value=df.iloc[0]["acc_receiveddatetime"])
 
-    return ISO8601(value="2025-05-26T10:00:00Z") #checkpoint
+    return ISO8601(value="2026-07-26T10:00:00Z")
 
 def get_blob_name_for_document_uri(document_uri: str) -> str:
     
@@ -1012,7 +1015,7 @@ async def main():
                 directory = f"ingest/{email_model.acc_receiveddatetime_year}/{email_model.acc_receiveddatetime_month}"
                 file_name = attachment["name"]
 
-                storage_uri = f"https://{config.STORAGE_ACCOUNT_URL}/{container_name}/{directory}/{file_name}"
+                storage_uri = f"{config.STORAGE_ACCOUNT_URL}/{container_name}/{directory}/{file_name}"
                 
                 await upload_to_azure_datalake_storage(
                      attachment["contentBytes"],
@@ -1027,7 +1030,9 @@ async def main():
                                                 attachment_name=attachment['name'],
                                                 attachment_type=attachment['contentType'],
                                                 storage_uri=storage_uri,
-                                                blob_name=file_name
+                                                blob_name=file_name,
+                                                directory=directory,
+                                                container=container_name
                                                 )
 
 

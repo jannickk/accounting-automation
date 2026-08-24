@@ -1,0 +1,27 @@
+{
+  "@odata.type": "Microsoft.Dynamics.CRM.OneToManyRelationshipMetadata",
+  "ReferencedEntity": "transactioncurrency",
+  "ReferencingEntity": "acc_document",
+  "SchemaName": "acc_transaction_currency_of_document",
+  "Lookup": {
+    "AttributeType": "Lookup",
+    "SchemaName": "acc_transactioncurrencyId",
+    "RequiredLevel": {
+      "Value": "ApplicationRequired",
+      "CanBeChanged": true
+    },
+    "DisplayName": {
+      "LocalizedLabels": [ { "Label": "The transaction currency of the document", "LanguageCode": 1033 } ]
+    },
+    "Description": {  
+        "@odata.type": "Microsoft.Dynamics.CRM.Label",  
+        "LocalizedLabels": [  
+            {  
+            "@odata.type": "Microsoft.Dynamics.CRM.LocalizedLabel",  
+            "Label": "The transaction Currency",  
+            "LanguageCode": 1033  
+            }  
+        ]
+    }  
+  }
+}

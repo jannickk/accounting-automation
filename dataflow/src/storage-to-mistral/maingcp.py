@@ -1,12 +1,10 @@
 from google.cloud import documentai_v1 as documentai
 from google.cloud import storage
-from google.cloud.bigquery import Client as BigQueryClient, QueryJobConfig
-from google.oauth2 import service_account
+
 import asyncio
 import os
 import json
 import logging
-from google.api_core.client_options import ClientOptions # type: ignore
 
 logger = logging.getLogger(__name__)
 

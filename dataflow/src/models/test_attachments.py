@@ -43,6 +43,8 @@ def test_attachment_factory_creates_valid_attachment(email_with_id: Email):
         attachment_type="application/pdf",
         storage_uri="https://storage.example/blob",
         blob_name="file.pdf",
+        directory="ingest/2026/8",
+        container="accounts-payable",
     )
 
     # Validate that the created attachment is an instance of Attachment
@@ -55,6 +57,8 @@ def test_attachment_factory_creates_valid_attachment(email_with_id: Email):
     assert attachment.acc_attachmenttype == "application/pdf"
     assert attachment.acc_storageaccounturi == "https://storage.example/blob"
     assert attachment.acc_blobname == "file.pdf"
+    assert attachment.acc_directory == "ingest/2026/8"
+    assert attachment.acc_container == "accounts-payable"
 
 
 def test_attachment_convert_to_odata_payload(email_with_id: Email):
@@ -75,8 +79,10 @@ def test_attachment_convert_to_odata_payload(email_with_id: Email):
         attachment_type="application/pdf",
         storage_uri="https://storageaccount.blob.core.windows.net/files",
         blob_name="invoice.pdf",
+        directory="ingest/2026/8",
+        container="accounts-payable",
     )
-    
+
     odata_payload = attachment.convert_to_odata_payload()
 
     # Validate payload is a dictionary
@@ -87,20 +93,26 @@ def test_attachment_convert_to_odata_payload(email_with_id: Email):
     assert "conent_bytes" not in odata_payload
 
     # Validate that required fields are present
-    assert "acc_emailId" in odata_payload
+    assert "acc_emailId@odata.bind" in odata_payload
     assert "acc_hashid" in odata_payload
     assert "acc_attachmentname" in odata_payload
     assert "acc_attachmenttype" in odata_payload
     assert "acc_storageaccounturi" in odata_payload
     assert "acc_blobname" in odata_payload
+    assert "acc_directory" in odata_payload
+    assert "acc_container" in odata_payload
 
+
+    ## Check that the acc_emailId is correctly converted to odata.bind
     # Validate field values
-    assert odata_payload["acc_emailId"] == email_with_id.acc_emailId
+    assert odata_payload["acc_emailId@odata.bind"] == f"/acc_emails({email_with_id.acc_emailId})"
     assert odata_payload["acc_hashid"] == "hash-abc-123"
     assert odata_payload["acc_attachmentname"] == "invoice.pdf"
     assert odata_payload["acc_attachmenttype"] == "application/pdf"
     assert odata_payload["acc_storageaccounturi"] == "https://storageaccount.blob.core.windows.net/files"
     assert odata_payload["acc_blobname"] == "invoice.pdf"
+    assert odata_payload["acc_directory"] == "ingest/2026/8"
+    assert odata_payload["acc_container"] == "accounts-payable"
 
     # Validate boolean fields
     assert odata_payload["acc_processeddocumentai"] is False
@@ -132,6 +144,8 @@ def test_create_attachment_insert_into_dataverse(email_in_dataverse: Email, clie
         attachment_type="application/pdf",
         storage_uri="https://storageaccount.blob.core.windows.net/reports",
         blob_name="report.pdf",
+        directory="ingest/2026/8",
+        container="accounts-payable",
     )
 
     # Attempt to upsert the attachment into Dataverse

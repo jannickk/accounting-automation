@@ -12,6 +12,8 @@ from PowerPlatform.Dataverse.client import DataverseClient
 from .acc_email import Email, EmailFactory
 from uuid import uuid4
 from typing import Generator
+from dotenv import load_dotenv
+
 
 
 @pytest.fixture

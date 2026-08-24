@@ -34,6 +34,7 @@ htmlcov/
 .dmypy.json
 dmypy.json
 .env
+**/*/.env
 # Terraform
 *.tfstate
 *.tfstate.*

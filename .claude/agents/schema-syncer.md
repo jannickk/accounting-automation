@@ -12,6 +12,8 @@ Your job is keep the Pydantic models defined in dataflow/src/models in sync with
 # Schema Locations
 
 Dataverse schema definiton:  dataverse/entity-definitions folder. 
+Relationships are defined in: dataverse/relationship-definitions folder.
+The relationships lead to additional Lookup columns for the entities
 Corresponding Pydantic models are defined in dataflow/src/models.
 
 # Direction of Sync

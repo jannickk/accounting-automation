@@ -1,7 +1,7 @@
 {
   "@odata.type": "Microsoft.Dynamics.CRM.EntityMetadata",
   "SchemaName": "acc_document",
-  "DisplayName": { "LocalizedLabels": [ { "Label": "Invoice", "LanguageCode": 1033 } ] },
+  "DisplayName": { "LocalizedLabels": [ { "Label": "Document", "LanguageCode": 1033 } ] },
   "DisplayCollectionName": { "LocalizedLabels": [ { "Label": "Extracted Document", "LanguageCode": 1033 } ] },
   "Description": { "LocalizedLabels": [ { "Label": "Extracted invoice metadata from documents", "LanguageCode": 1033 } ] },
   "OwnershipType": "UserOwned",
@@ -19,84 +19,7 @@
     }
   ],
   "Attributes": [
-    {
-      "@odata.type": "Microsoft.Dynamics.CRM.LookupAttributeMetadata",
-      "SchemaName": "acc_supplier",
-      "RequiredLevel": { "Value": "ApplicationRequired", "CanBeChanged": true },
-      "DisplayName": { "LocalizedLabels": [ { "Label": "Supplier", "LanguageCode": 1033 } ] },
-      "Targets": [ "acc_creditor" ]
-    },
-    {
-      "@odata.type": "Microsoft.Dynamics.CRM.LookupAttributeMetadata",
-      "SchemaName": "acc_attachment",
-      "RequiredLevel": { "Value": "ApplicationRequired", "CanBeChanged": true },
-      "DisplayName": { "LocalizedLabels": [ { "Label": "The attachment from which these data were extracted", "LanguageCode": 1033 } ] },
-      "Targets": [ "acc_attachment" ]
-    },
-    {
-      "@odata.type": "Microsoft.Dynamics.CRM.PicklistAttributeMetadata",
-      "SchemaName": "acc_document_type",
-      "RequiredLevel": { "Value": "ApplicationRequired", "CanBeChanged": true },
-      "DisplayName": { "LocalizedLabels": [ { "Label": "Document Type", "LanguageCode": 1033 } ] },
-      "OptionSet": {
-        "IsGlobal": false,
-        "OptionSetType": "Picklist",
-        "Options": [
-          {
-            "Value": 1,
-            "Label": {
-              "LocalizedLabels": [
-                {
-                  "Label": "Invoice",
-                  "LanguageCode": 1033
-                }
-              ]
-            }
-          },
-          {
-            "Value": 2,
-            "Label": {
-              "LocalizedLabels": [
-                {
-                  "Label": "Creditor Note",
-                  "LanguageCode": 1033
-                }
-              ]
-            }
-          },
-          {
-            "Value": 3,
-            "Label": {
-              "LocalizedLabels": [
-                {
-                  "Label": "Debit Note",
-                  "LanguageCode": 1033
-                }
-              ]
-            }
-          },
-          {
-            "Value": 4,
-            "Label": {
-              "LocalizedLabels": [
-                {
-                  "Label": "Pro Forma Invoice",
-                  "LanguageCode": 1033
-                }
-              ]
-            }
-          }
-        ]
-      }
-    },
-    {
-      "@odata.type": "Microsoft.Dynamics.CRM.StringAttributeMetadata",
-      "SchemaName": "acc_document_hash_id",
-      "RequiredLevel": { "Value": "ApplicationRequired", "CanBeChanged": true },
-      "DisplayName": { "LocalizedLabels": [ { "Label": "Document Hash ID", "LanguageCode": 1033 } ] },
-      "MaxLength": 200,
-      "FormatName": { "Value": "Text" }
-    },
+   
     {
       "@odata.type": "Microsoft.Dynamics.CRM.StringAttributeMetadata",
       "SchemaName": "acc_document_alternatekey",
@@ -159,13 +82,6 @@
       "FormatName": { "Value": "Text" }
     },
     {
-      "@odata.type": "Microsoft.Dynamics.CRM.LookupAttributeMetadata",
-      "SchemaName": "acc_transaction_currency",
-      "RequiredLevel": { "Value": "None", "CanBeChanged": true },
-      "DisplayName": { "LocalizedLabels": [ { "Label": "Currency", "LanguageCode": 1033 } ] },
-      "Targets": [ "transactioncurrency" ]
-    },
-    {
       "@odata.type": "Microsoft.Dynamics.CRM.StringAttributeMetadata",
       "SchemaName": "acc_supplier_iban",
       "RequiredLevel": { "Value": "None", "CanBeChanged": true },
@@ -194,6 +110,12 @@
       "SchemaName": "acc_invoice_month",
       "RequiredLevel": { "Value": "None", "CanBeChanged": true },
       "DisplayName": { "LocalizedLabels": [ { "Label": "Invoice Month", "LanguageCode": 1033 } ] }
+    },
+    {
+      "@odata.type": "Microsoft.Dynamics.CRM.StringAttributeMetadata",
+      "SchemaName": "acc_products_and_services_received",
+      "RequiredLevel": { "Value": "None", "CanBeChanged": true },
+      "DisplayName": { "LocalizedLabels": [ { "Label": "Products & Services Received", "LanguageCode": 1033 } ] }
     },
     {
       "@odata.type": "Microsoft.Dynamics.CRM.IntegerAttributeMetadata",
@@ -257,22 +179,6 @@
       "RequiredLevel": { "Value": "None", "CanBeChanged": true },
       "DisplayName": { "LocalizedLabels": [ { "Label": "Supplier Registration", "LanguageCode": 1033 } ] },
       "MaxLength": 250,
-      "FormatName": { "Value": "Text" }
-    },
-    {
-      "@odata.type": "Microsoft.Dynamics.CRM.StringAttributeMetadata",
-      "SchemaName": "acc_storageaccounturi",
-      "RequiredLevel": { "Value": "None", "CanBeChanged": true },
-      "DisplayName": { "LocalizedLabels": [ { "Label": "Storage Account Uri of the processed documents", "LanguageCode": 1033 } ] },
-      "MaxLength": 1000,
-      "FormatName": { "Value": "Text" }
-    },
-    {
-      "@odata.type": "Microsoft.Dynamics.CRM.StringAttributeMetadata",
-      "SchemaName": "acc_blobname",
-      "RequiredLevel": { "Value": "None", "CanBeChanged": true },
-      "DisplayName": { "LocalizedLabels": [ { "Label": "Blob Name", "LanguageCode": 1033 } ] },
-      "MaxLength": 1000,
       "FormatName": { "Value": "Text" }
     }
   ]

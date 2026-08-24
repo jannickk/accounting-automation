@@ -86,6 +86,22 @@
       "FormatName": { "Value": "Text" }
     },
     {
+      "@odata.type": "Microsoft.Dynamics.CRM.StringAttributeMetadata",
+      "SchemaName": "acc_directory",
+      "RequiredLevel": { "Value": "ApplicationRequired", "CanBeChanged": true },
+      "DisplayName": { "LocalizedLabels": [ { "Label": "The directory inside the container", "LanguageCode": 1033 } ] },
+      "MaxLength": 1000,
+      "FormatName": { "Value": "Text" }
+    },
+    {
+      "@odata.type": "Microsoft.Dynamics.CRM.StringAttributeMetadata",
+      "SchemaName": "acc_container",
+      "RequiredLevel": { "Value": "ApplicationRequired", "CanBeChanged": true },
+      "DisplayName": { "LocalizedLabels": [ { "Label": "The name of the Container/Filesystem", "LanguageCode": 1033 } ] },
+      "MaxLength": 1000,
+      "FormatName": { "Value": "Text" }
+    },
+    {
       "@odata.type": "Microsoft.Dynamics.CRM.BooleanAttributeMetadata",
       "SchemaName": "acc_uploadedtodatev",
       "RequiredLevel": { "Value": "ApplicationRequired", "CanBeChanged": true },

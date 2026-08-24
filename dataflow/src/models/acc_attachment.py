@@ -1,7 +1,7 @@
 import hashlib
 from typing import Optional
 from datetime import datetime
-from pydantic import AliasChoices, ConfigDict, Field, computed_field
+from pydantic import AliasChoices, ConfigDict, Field, computed_field, BaseModel
 from PowerPlatform.Dataverse.client import DataverseClient
 
 from .entity_base import EntityBase
@@ -18,10 +18,15 @@ class Attachment(EntityBase):
     acc_emailId: str = Field(
         ...,
         foreign_key="acc_email.acc_emailId",
-        validation_alias=AliasChoices("acc_emailId", "acc_emailid"),
+        validation_alias=AliasChoices("acc_emailId", "acc_emailid","_acc_emailid_value"), # when requesting a record Lookup columns are resolved in this way
+        serialization_alias="emailId@odata.bind"
     )
     
-    acc_isduplicateof: Optional[Email] = Field(default=None, foreign_key="acc_attachment.acc_attachmentId")
+    acc_duplicate_attachmentId: Optional[str] = Field(
+        default=None,
+        foreign_key="acc_attachment.acc_attachmentId",
+        validation_alias=AliasChoices("acc_duplicate_attachmentId", "acc_duplicate_attachmentid", "_acc_duplicate_attachmentid_value"),
+    )
     acc_hashid: str = Field(max_length=200)
     acc_processeddocumentai: bool = False
     acc_processeddatetime: Optional[datetime] = None
@@ -29,6 +34,8 @@ class Attachment(EntityBase):
     acc_attachmenttype: str = Field(max_length=200)
     acc_storageaccounturi: str = Field(max_length=1000)
     acc_blobname: str = Field(max_length=1000)
+    acc_directory: str = Field(max_length=1000)
+    acc_container: str = Field(max_length=1000)
     acc_uploadedtodatev: bool = False
     acc_uploadeddatetime: Optional[datetime] = None
     
@@ -52,14 +59,19 @@ class Attachment(EntityBase):
         alternate key, and converts lookup fields into the OData bind format.
         """
         record = self.model_dump(mode="json", exclude={"entity_logical_name","conent_bytes"}, exclude_none=True)
+
         record["acc_attachment_alternatekey"] = self.acc_attachment_alternatekey
 
         def extract_lookup_id(value, target_pk):
+
             if isinstance(value, str):
                 return value
+            
             if isinstance(value, BaseModel):
                 return extract_lookup_id(value.model_dump(mode="json"), target_pk)
+            
             if isinstance(value, dict):
+
                 candidates = [target_pk, target_pk.lower(), target_pk.rstrip("Id"), "id"]
                 for key in candidates:
                     if key in value and isinstance(value[key], str):
@@ -69,15 +81,27 @@ class Attachment(EntityBase):
         payload = {}
         
         for field_name, field_value in record.items():
-            field_info = self.model_fields.get(field_name)
-            foreign_key = getattr(field_info, "extra", {}).get("foreign_key") if field_info else None
-            if foreign_key and field_value is not None:
-                target_entity, target_pk = foreign_key.split(".", 1)
-                lookup_id = extract_lookup_id(field_value, target_pk)
-                if lookup_id:
-                    binding_collection = target_entity if target_entity.endswith("s") else f"{target_entity}s"
-                    payload[f"{field_name}@odata.bind"] = f"/{binding_collection}({lookup_id})"
-                    continue
+
+            field_info = Attachment.model_fields.get(field_name)
+
+            json_extra_schema = getattr(field_info, "json_schema_extra", {})
+
+            if json_extra_schema is not None:
+
+                foreign_key = json_extra_schema.get("foreign_key",None) if field_info else None
+
+                if foreign_key and field_value is not None:
+
+                    # acc_email.acc_emailId
+                    target_entity, target_pk = foreign_key.split(".", 1)
+
+                    # this would be target_pk
+                    lookup_id = extract_lookup_id(field_value, target_pk)
+
+                    if lookup_id:
+                        binding_collection = target_entity if target_entity.endswith("s") else f"{target_entity}s"
+                        payload[f"{field_name}@odata.bind"] = f"/{binding_collection}({lookup_id})"
+                        continue
             payload[field_name] = field_value
 
         return payload
@@ -96,6 +120,9 @@ class Attachment(EntityBase):
         record = self.model_dump(mode="json", exclude={"entity_logical_name","content_bytes"})
         # Ensure the alternate key value is present for the upsert URL
         record["acc_attachment_alternatekey"] = self.acc_attachment_alternatekey
+
+        print(f"Upserting following key: {self.convert_to_odata_payload()}" )
+
 
         client.records.upsert(
             self.entity_logical_name,
@@ -119,13 +146,15 @@ class AttachmentFactory:
         attachment_type: str,
         storage_uri: str,
         blob_name: str,
+        directory: str,
+        container: str,
         is_duplicate_of: Optional[str] = None,
 
     ) -> "Attachment":
-        
+
         return Attachment(
             acc_emailId=email.acc_emailId,
-            acc_isduplicateof=is_duplicate_of,
+            acc_duplicate_attachmentId=is_duplicate_of,
             acc_hashid=hash_id,
             acc_processeddocumentai=False,
             acc_processeddatetime=None,
@@ -133,6 +162,8 @@ class AttachmentFactory:
             acc_attachmenttype=attachment_type,
             acc_storageaccounturi=storage_uri,
             acc_blobname=blob_name,
+            acc_directory=directory,
+            acc_container=container,
             acc_uploadedtodatev=False,
             acc_uploadeddatetime=None,
         )

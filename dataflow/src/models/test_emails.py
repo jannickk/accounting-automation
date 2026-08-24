@@ -2,12 +2,13 @@ from datetime import datetime
 import hashlib
 
 from azure.identity import ClientSecretCredential
-from config.config import Config
+from ..config.config import Config
 import pytest
 from .entity_base import EntityBase
 from PowerPlatform.Dataverse.client import DataverseClient
 
 from .acc_email import Email, EmailFactory
+
 
 @pytest.fixture
 def config():
@@ -134,9 +135,6 @@ def test_email_model_validate_accepts_dataverse_payload():
         "_createdby_value": "3b1d3ac8-ab35-f111-88b4-000d3ab76fd8",
         "_ownerid_value": "3b1d3ac8-ab35-f111-88b4-000d3ab76fd8",
     }
-
-
- 
 
     email = Email.model_validate(payload)
 
