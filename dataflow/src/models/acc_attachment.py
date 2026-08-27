@@ -1,11 +1,23 @@
 import hashlib
+from enum import IntEnum
 from typing import Optional
 from datetime import datetime
 from pydantic import AliasChoices, ConfigDict, Field, computed_field, BaseModel
 from PowerPlatform.Dataverse.client import DataverseClient
-
+import os
+import sys
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from .entity_base import EntityBase
 from .acc_email import Email
+from .document_data import DocumentData
+
+
+class ProcessedDocumentAIStatus(IntEnum):
+    """Mirrors the ``acc_processed_document_ai_status`` Picklist option set."""
+
+    succeeded = 0
+    failed = 1
+    tbd = 2
 
 
 class Attachment(EntityBase):
@@ -28,8 +40,9 @@ class Attachment(EntityBase):
         validation_alias=AliasChoices("acc_duplicate_attachmentId", "acc_duplicate_attachmentid", "_acc_duplicate_attachmentid_value"),
     )
     acc_hashid: str = Field(max_length=200)
-    acc_processeddocumentai: bool = False
-    acc_processeddatetime: Optional[datetime] = None
+    acc_processed_document_ai: bool = Field(default=False)
+    acc_processed_document_ai_datetime: Optional[datetime] = None
+    acc_processed_document_ai_status: ProcessedDocumentAIStatus = ProcessedDocumentAIStatus.tbd
     acc_attachmentname: str = Field(max_length=500)
     acc_attachmenttype: str = Field(max_length=200)
     acc_storageaccounturi: str = Field(max_length=1000)
@@ -59,6 +72,8 @@ class Attachment(EntityBase):
         alternate key, and converts lookup fields into the OData bind format.
         """
         record = self.model_dump(mode="json", exclude={"entity_logical_name","conent_bytes"}, exclude_none=True)
+
+        ## the record will have the serialization_aliases
 
         record["acc_attachment_alternatekey"] = self.acc_attachment_alternatekey
 
@@ -156,8 +171,9 @@ class AttachmentFactory:
             acc_emailId=email.acc_emailId,
             acc_duplicate_attachmentId=is_duplicate_of,
             acc_hashid=hash_id,
-            acc_processeddocumentai=False,
-            acc_processeddatetime=None,
+            acc_processed_documentai=False,
+            acc_processed_document_ai_datetime=None,
+            acc_processed_document_ai_status=ProcessedDocumentAIStatus.tbd,
             acc_attachmentname=attachment_name,
             acc_attachmenttype=attachment_type,
             acc_storageaccounturi=storage_uri,
@@ -186,3 +202,5 @@ class AttachmentFactory:
         print(f"Fetched attachment record from Dataverse: {data}")
 
         return Attachment.model_validate(data)
+
+

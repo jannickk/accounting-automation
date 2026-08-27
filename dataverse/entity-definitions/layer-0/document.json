@@ -114,6 +114,7 @@
     {
       "@odata.type": "Microsoft.Dynamics.CRM.StringAttributeMetadata",
       "SchemaName": "acc_products_and_services_received",
+      "MaxLength": 4000,
       "RequiredLevel": { "Value": "None", "CanBeChanged": true },
       "DisplayName": { "LocalizedLabels": [ { "Label": "Products & Services Received", "LanguageCode": 1033 } ] }
     },

@@ -1,31 +1,20 @@
-## The accountinf infrastructure is created in Google CLoud
 
 
-## For the automation to work we must first manually configure the Workload Identity Federation so that Gitlab CI can authenticate against Google
+## Integrate AI into your structured dataflows
+
+This repo contains a show case how incoming documents for accounts-payables are extarcted using MIstral AI latest flagship multimodel model to extract 
+structured information. 
 
 
-1) Create a Workload Identity Pool
-
-gcloud iam workload-identity-pools create gitlab-pool --location=global --display-name="GitLab Pool"
-
-2) Inside that pool create a workload Identity provider
-
-gcloud iam workload-identity-pools providers create-oidc gitlab-provider \
-  --location=global \
-  --workload-identity-pool=gitlab-pool \
-  --display-name="GitLab Provider" \
-  --issuer-uri="https://gitlab.com"
-
-3) Create a User managed service account
-
-4) Create a iam-policy binding to bind the service account to the workload identity user 
-
-gcloud iam service-accounts add-iam-policy-binding \
-  <SERVICE ACCOUNT EMAIL>@<PROJECT_ID>.iam.gserviceaccount.com \
-  --role="roles/iam.workloadIdentityUser" \
-  --member="principalSet://iam.googleapis.com/projects/<PROJECT_NUMBER>/locations/global/workloadIdentityPools/gitlab-pool/massflows/terraform-infrastructure"
+## High-level architecture
 
 
+All Information is stored in Microsoft Dataverse.
+
+
+## Agents 
+
+The agent schema-syncer` keeps the schemas between Dataverse Schema specification and the Pydantic Models 
 
 ######
 
@@ -38,3 +27,10 @@ gcloud iam service-accounts add-iam-policy-binding \
 4) the extracted information is stored in a silver invoice table and documents are copied to a silver storage location partionied by supplier and 
 
 
+Common Issues
+
+The queries for the tools turned out to be  explicetly states the queries to use because depending on the Run, some queries were not corretly constructed
+
+## 
+
+In order to use the MCP Connection to Azure Storage, you need authenticate uisng in order to provide the default azure credential `az login --use-device-code`

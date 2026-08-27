@@ -5,16 +5,16 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "accounts_payable_automation"
 version = "0.1.0"
-description = "Dataflow package containing the accounting automation source modules."
+description = "Dataflow package to auomate reliable OCR on incoing invoices using Mistral AI"
 readme = "README.md"
-requires-python = ">=3.11"
+requires-python = ">=3.12"
 authors = [
   { name = "Accounting Automation" }
 ]
-keywords = ["accounting", "dataverse", "google-cloud", "dataflow", "automation"]
+keywords = ["accounts-payable", "dataverse", "mistral-ai", "dataflow", "automation"]
 classifiers = [
-  "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
   "Operating System :: OS Independent"
 ]
 

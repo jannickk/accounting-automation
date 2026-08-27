@@ -13,29 +13,24 @@ import base64
 from mistralai.client.chat_completion_events import ChatCompletionEvents
 import json
 from PowerPlatform.Dataverse import DataverseClient
+import asyncio
 import urllib
-import datetime
 from datetime import timezone,timedelta,datetime
 import logging
 import sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from models import Email, EmailFactory, Attachment, AttachmentFactory
+from models import Email, EmailFactory, Attachment, AttachmentFactory, DocumentData, Document
+from utility import copy_file_from_one_folder_to_another,update_attachment_as_successfully_processed
 from config.config import Config
 from utility.dataverse import *
 from dotenv import load_dotenv
 from pathlib import Path
 
 
-
-
-
-
-PDF_DIRECTORY="../pdfs/"
-PDF_OUTPUT_DIRECTORY="../pdf-output-directory"
-
-CONTAINER_NAME="invoices"
-DIRECTORY="unprocessed"
-
+from enum import Enum, IntEnum
+from pydantic import BaseModel
+from typing import Annotated
+from annotated_types import Gt, Ge
 
 
 
@@ -79,20 +74,6 @@ def get_or_create_connector(client, name, description, server, visibility, auth_
         auth_data=auth_data,
     )
 
-
-
-def encode_pdf(pdf_path)-> str:
-
-    """Encode the pdf to base64."""
-    try:
-        with open(pdf_path, "rb") as pdf_file:
-            return base64.b64encode(pdf_file.read()).decode('utf-8')
-    except FileNotFoundError:
-        print(f"Error: The file {pdf_path} was not found.")
-        return None
-    except Exception as e:
-        print(f"Error: {e}")
-        return None
 
 def get_short_lived_sas_url(service_client: DataLakeServiceClient, filesystem_name, directory_name, file_name)-> str:
     
@@ -139,13 +120,14 @@ if __name__=="__main__":
     mistral_client = Mistral(api_key=config.MISTRAL_API_KEY)
 
 
-    attachments_to_process = get_unprocessed_documents_from_dataverse(dataverse_client)
-    ## Upload the file to an azure blob storage
+    attachments_to_process:Generator[Attachment, Any,Any] = get_unprocessed_documents_from_dataverse(dataverse_client)
+    ## Upload the attachment to an azure blob storage
     
     service = DataLakeServiceClient.from_connection_string(conn_str=config.DATALAKE_STORAGE_CONNECTION_STRING)
 
 
     print("Trying to create connector")
+    
     dataverse_connector = get_or_create_connector(
         client=mistral_client,
         name="dataverse_connector",
@@ -160,76 +142,13 @@ if __name__=="__main__":
 
 
 
-    for file in attachments_to_process:
+    for attachment in attachments_to_process:
 
-        
-        sas_url = get_short_lived_sas_url(service,file["container"],file["directory"],file["blob_name"])
+        print(attachment)
 
-
-        # if not CONTAINER_NAME in [filesystem.name for filesystem in file_systems]:
-
-        #     service.create_file_system(CONTAINER_NAME)
-        
-        # file_system_client = service.get_file_system_client(file_system=CONTAINER_NAME)
-
-        # # 3. Get the Directory Client
-        # directory_client = file_system_client.get_directory_client(DIRECTORY)
+        sas_url = get_short_lived_sas_url(service,attachment.acc_container,attachment.acc_directory,attachment.acc_blobname)
 
 
-        # file_client = directory_client.get_file_client(file)
-
-        # if not file_client.exists():
-        
-        #     file_client = directory_client.create_file(file)
-
-        #     local_path=PDF_DIRECTORY+"/"+file
-
-        #     with open(local_path, "rb") as data:
-
-        #         file_length = os.path.getsize(local_path)
-
-        #         file_client.append_data(data, offset=0, length=file_length)
-
-        #         file_client.flush_data(file_length)
-                
-
-        # sas_url = get_short_lived_sas_url(service,file_client,CONTAINER_NAME,DIRECTORY,file)
-
-        # print(sas_url)
-
-        # print(f"Reading out the file: {file}")
-        
-
-        # base64_pdf = encode_pdf(PDF_DIRECTORY+"/"+file)
-
-        # Call the OCR API
-        #pdf_response:OCRResponse = mistral_client.ocr.process(
-        #
-        #                                     model="mistral-ocr-latest",
-        #                                    document={
-        #                                                "type": "document_url",
-        #                                                "document_url": f"data:application/pdf;base64,{base64_pdf}"
-        #                                            },
-        #                                    include_image_base64=True,
-        #                                    table_format="html" #Specify HTML format to render complex table formats
-        #                                )
-
-        # Convert response to JSON format
-        #response_dict = json.loads(pdf_response.model_dump_json())
-
-        #print(response_dict)
-
-        #with open(PDF_OUTPUT_DIRECTORY+"/ocr_result_"+file+"_.md","w") as f:
-        #    f.writelines(pdf_response.pages[0].markdown)
-
-        ## Do the same with a system prompt
-
-        ### Passing the entire base64 encoded serialized pdf into the request leads to context length overflow
-
-        ## mistralai.client.errors.sdkerror.SDKError: API error occurred: Status 400. Body: {"object":"error","message":"Prompt contains 159202 tokens and 0 draft tokens, too large for model with 131072 maximum context length","type":"invalid_request_invalid_args","param":null,"code":"3051","raw_status_code":400}
-
-
-        # Example message structure for Document Intelligence
         messages = [
             {
                 "role": "system",
@@ -239,7 +158,6 @@ if __name__=="__main__":
                             The debitor is always massflows UG. 
                             The possible values for the creditor names are to be found in table `acc_creditor` using the Dataverse connector using the following query `SELECT acc_name FROM acc_creditor`.
                             The possible values for transcarion currency can be extracted from the `transactioncurrency` entity using the Dataverse connector tooling using the query `SELECT transactioncurrencyid, currencyname, isocurrencycode, currencysymbol FROM transactioncurrency`.
-                            Please use English for all return field keys
                             """
             },
             {
@@ -247,18 +165,7 @@ if __name__=="__main__":
                 "content": [
                                 {
                                     "type": "text", 
-                                    "text": """
-                                                Extract invoice information into a structured JSON with the following information
-                                                    - creditor
-                                                    - date of the invoice
-                                                    - the period of service with start and end date
-                                                    - the debitor (which is always massflows UG).
-                                                    - total amount of invoice (not individual positions)
-                                                    - total amount of taxes paid (if any)
-                                                    - the invoice number
-                                                    - the products / services received
-                                                    - the transaction currency of the document
-                                            """
+                                    "text": f"Extract invoice information into a structured JSON with the following schema: {DocumentData.model_json_schema()}"
                                 },
                                 {
                                     "type": "document_url",
@@ -268,20 +175,28 @@ if __name__=="__main__":
             }
         ]
 
+                
+        ## When the document is sent is sent as base64 encoded binary data in the prompt, sooner or later you run into the error:      
+        ## mistralai.client.errors.sdkerror.SDKError: API error occurred: Status 400. Body: {"object":"error","message":"Prompt contains 159202 tokens and 0 draft tokens, too large for model with 131072 maximum context length","type":"invalid_request_invalid_args","param":null,"code":"3051","raw_status_code":400}
+
         response = mistral_client.chat.complete(
-            model="mistral-large-latest", # Or your specific document model
+            model="mistral-large-latest",
             messages=messages,
             response_format={"type": "json_object"},
             tools=[{"type": "connector", "connector_id": dataverse_connector.id}]
         )
+
+        print("response was:")
+        print(response)
+
         choices = getattr(response,"choices")
 
 
         print(f"found the following choices {len(choices)}")
+
         if len(choices)==1:
 
-            print(choices[0])
-
+            # Request just demands one choice, hence the first can be used
             messages = getattr(choices[0],"messages",None)
 
             if messages:
@@ -289,18 +204,80 @@ if __name__=="__main__":
               ## if an error occurs in any document
             
                 if any(["error" in message.content for message in messages]):
-                    print(f"Error processing fiel {file["blob_name"]}")
 
-                    ## TODO Mark processing of file as failed in Dataverse
+                    print(f"Error processing attachment {attachment.acc_storageaccounturi}")
+
+                    update_attachment_as_failed(dataverse_client, attachment)
+
+                    ## TODO Mark processing of attachment as failed in Dataverse
                     continue
             
                 else:
 
-                    print(f"Extract document information from document {file["blob_name"]}")
+                    print(f"Extracted document information from document {attachment.acc_storageaccounturi}")
 
-                for message in messages:
 
-                    # messages will contain tool call results
-                    if not message.tool_calls:
+
+                    ## Try find the message with the extraction result
+
+                    message_index = None
+
+                    for ind, message in enumerate(messages):
+
+                        content = getattr(message,"content",'')
+
+                        if (message.role == "assistant") and (content !='') and (content !={}):
+
+                            message_index=ind
+
+                    if message_index:
+                        
+                        message = messages[message_index]
+
                         print(f"{message.role},{message.content},{message.tool_calls}")
 
+                        extracted:DocumentData = DocumentData.model_validate_json(message.content)
+
+                        ## Lookup id of creditor based on the extracted name
+                        creditor_id = get_creditor_id_by_name(dataverse_client, extracted.creditor)
+
+                        ## Lookup transaction currency based on the extracted isocode
+                        transaction_currency_id = get_id_of_transaction_currency(dataverse_client, extracted.transaction_currency)
+
+                        if ((creditor_id == None) or (transaction_currency_id == None)):
+
+                            print("Successfully extarcted data from document")
+                            print("However creditor or transaction currency extracted could not be found in Master data table")
+                            update_attachment_as_failed(dataverse_client, attachment)
+
+                        else:
+
+                            document:Document = Document(
+                                                acc_attachmentId = attachment.acc_attachmentId,
+                                                acc_creditorId = creditor_id,
+                                                acc_transactioncurrencyId = transaction_currency_id,
+                                                acc_invoice_date= extracted.date_of_invoice,
+                                                acc_gross_amount= extracted.total_amount,
+                                                acc_net_amount= extracted.net_amount,
+                                                acc_vat_amount=extracted.total_amount_of_taxes_paid,
+                                                acc_invoice_id = extracted.invoice_number,
+                                                acc_products_and_services_received = " , ".join([str(item) for item in [extracted.products_services_received] if extracted.products_services_received is not None])
+                                    )
+
+                            document:Document = document.upsert_to_dataverse(dataverse_client)
+
+                            asyncio.run(copy_file_from_one_folder_to_another(
+                                                                                        config,
+                                                                                        source_path = attachment.acc_directory+"/"+str(attachment.acc_blobname),
+                                                                                        target_path = extracted.creditor+"/"+ str(document.acc_invoice_year)+"/"+str(attachment.acc_blobname),
+                                                                                        container = attachment.acc_container
+                                                                                     )
+                                                                                     )
+
+                            print(f"Successfully upserted: {attachment.acc_storageaccounturi}")
+
+                            update_attachment_as_successfully_processed(dataverse_client, attachment)
+
+                    else:
+
+                        print("No Message from assistent found that has non-zero content")

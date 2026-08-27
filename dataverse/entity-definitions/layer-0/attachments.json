@@ -36,7 +36,8 @@
     },
     {
       "@odata.type": "Microsoft.Dynamics.CRM.BooleanAttributeMetadata",
-      "SchemaName": "acc_processeddocumentai",
+      "SchemaName": "acc_processed_document_ai",
+      "DefaultValue": true,
       "RequiredLevel": { "Value": "ApplicationRequired", "CanBeChanged": true },
       "DisplayName": { "LocalizedLabels": [ { "Label": "Processed Document AI", "LanguageCode": 1033 } ] },
       "OptionSet": {
@@ -48,9 +49,56 @@
       "@odata.type": "Microsoft.Dynamics.CRM.DateTimeAttributeMetadata",
       "AttributeType": "DateTime",
       "AttributeTypeName": {"Value": "DateTimeType"},
-      "SchemaName": "acc_processeddatetime",
+      "SchemaName": "acc_processed_document_ai_datetime",
       "DisplayName": { "LocalizedLabels": [ { "Label": "Processed DateTime", "LanguageCode": 1033}]},
-      "RequiredLevel": { "Value": "ApplicationRequired", "CanBeChanged": true}
+      "RequiredLevel": { "Value": "None", "CanBeChanged": true}
+    },
+    {
+      "@odata.type": "Microsoft.Dynamics.CRM.PicklistAttributeMetadata",
+      "AttributeType": "Picklist",
+      "RequiredLevel": { "Value": "ApplicationRequired", "CanBeChanged": true},
+      "SchemaName": "acc_processed_document_ai_status",
+      "DefaultFormValue": 2,
+      "DisplayName": { "LocalizedLabels": [ { "Label": "Processed AI Status", "LanguageCode": 1033}]},
+      "OptionSet": {
+        "IsGlobal": false,
+        "OptionSetType": "Picklist",
+        "Options": [
+          {
+            "Value": 0,
+            "Label": {
+              "LocalizedLabels": [
+                {
+                  "Label": "Succeeded",
+                  "LanguageCode": 1033
+                }
+              ]
+            }
+          },
+          {
+            "Value": 1,
+            "Label": {
+              "LocalizedLabels": [
+                {
+                  "Label": "Failed",
+                  "LanguageCode": 1033
+                }
+              ]
+            }
+          },
+          {
+            "Value": 2,
+            "Label": {
+              "LocalizedLabels": [
+                {
+                  "Label": "TBD",
+                  "LanguageCode": 1033
+                }
+              ]
+            }
+          }
+        ]
+      }
     },
     {
       "@odata.type": "Microsoft.Dynamics.CRM.StringAttributeMetadata",

@@ -8,13 +8,12 @@ from google.oauth2 import service_account
 import aiohttp
 import os
 import json
-from custom_types import ISO8601
 from pathlib import Path
 import asyncio
 import logging
 import sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from models import Email, EmailFactory, Attachment, AttachmentFactory
+from models import Email, EmailFactory, Attachment, AttachmentFactory, ISO8601
 from config.config import Config
 import base64
 from datetime import datetime, timezone
@@ -660,7 +659,7 @@ async def write_document_to_dataverse(
     Write attachment data to the Dataverse ``acc_attachment`` table.
 
     Mirrors :func:`write_document`: builds an :class:`Attachment` record and upserts it
-    (keyed on ``acc_hashid``). ``acc_processeddatetime``/``acc_uploadeddatetime`` are left
+    (keyed on ``acc_hashid``). ``acc_processed_document_ai_datetime``/``acc_uploadeddatetime`` are left
     unset and the boolean flags default to ``False`` because the document has only just
     been ingested.
 

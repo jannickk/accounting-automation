@@ -2,10 +2,11 @@ import hashlib
 from typing import Optional
 from decimal import Decimal
 from datetime import date
-from pydantic import AliasChoices, ConfigDict, Field, computed_field
+from pydantic import AliasChoices, ConfigDict, Field, computed_field, field_serializer, model_validator
 from PowerPlatform.Dataverse.client import DataverseClient
 from .acc_attachment import Attachment
 from .entity_base import EntityBase
+from. document_data import DocumentData
 
 
 class Document(EntityBase):
@@ -26,6 +27,12 @@ class Document(EntityBase):
                                 )
 
     acc_invoice_date: Optional[date] = None
+
+    acc_invoice_year: Optional[int] = None
+    acc_invoice_month: Optional[int] = None
+    acc_invoice_day: Optional[int] = None
+
+
     acc_net_amount: Optional[Decimal] = Field(default=None, ge=0, le=Decimal("99000000000"))
     acc_vat_amount: Optional[Decimal] = Field(default=None, ge=0, le=Decimal("99000000000"))
     acc_gross_amount: Optional[Decimal] = Field(default=None, ge=0, le=Decimal("99000000000"))
@@ -38,10 +45,7 @@ class Document(EntityBase):
                                                 validation_alias=AliasChoices("acc_transactioncurrencyId", "acc_transactioncurrencyid", "_acc_transactioncurrencyid_value")
                                         )
     acc_supplier_iban: Optional[str] = Field(default=None, max_length=50)
-    acc_invoice_year: Optional[int] = None
-    acc_invoice_month: Optional[int] = None
-    acc_products_and_services_received: Optional[str] = None
-    acc_invoice_day: Optional[int] = None
+    acc_products_and_services_received: Optional[str] = Field(default=None, max_length=4000)
     acc_period_of_service_month: Optional[int] = None
     acc_period_of_service_start_date: Optional[date] = None
     acc_period_of_service_end_date: Optional[date] = None
@@ -57,12 +61,47 @@ class Document(EntityBase):
         default_factory=None,
         validation_alias=AliasChoices("acc_documentId", "acc_documentid"),
     )
+    
+    @model_validator(mode="after")
+    def compute_month(self) -> "Document":
+        if self.acc_invoice_date:
+            self.acc_invoice_month = self.acc_invoice_date.month
+        return self
+
+    @model_validator(mode="after")
+    def compute_day(self) -> "Document":
+        if self.acc_invoice_date:
+            self.acc_invoice_day = self.acc_invoice_date.day
+        return self
+
+
+    @model_validator(mode="after")
+    def compute_year(self) -> "Document":
+        if self.acc_invoice_date:
+            self.acc_invoice_year = self.acc_invoice_date.year
+        return self
 
     @computed_field
     def acc_document_alternatekey(self) -> str:
         return hashlib.sha256((self.acc_creditorId + str(self.acc_invoice_date)).encode('utf-8')).hexdigest()
 
-    def upsert_to_dataverse(self, client: DataverseClient):
+    @field_serializer(
+        "acc_net_amount",
+        "acc_vat_amount",
+        "acc_gross_amount",
+        "acc_total_amount",
+        when_used="unless-none",
+    )
+    def serialize_money(self, value: Decimal) -> float:
+        """Emit money columns as JSON numbers.
+
+        Pydantic's JSON mode renders ``Decimal`` as a string, but the Dataverse
+        Web API is called without ``IEEE754Compatible=true``, so it expects
+        ``Edm.Decimal`` as a number and otherwise rejects the payload.
+        """
+        return float(value)
+
+    def upsert_to_dataverse(self, client: DataverseClient)->"Document":
         """
         Upsert the document record to Dataverse using the provided Dataverse client.
 
@@ -71,10 +110,6 @@ class Document(EntityBase):
         (``mode="json"``) so that datetimes become ISO 8601 strings the
         OData layer can send.
         """
-
-        record = self.model_dump(mode="json", exclude={"entity_logical_name"})
-        # Ensure the alternate key value is present for the upsert URL
-        record["acc_document_alternatekey"] = self.acc_document_alternatekey
 
         client.records.upsert(
             self.entity_logical_name,
@@ -85,6 +120,8 @@ class Document(EntityBase):
                 }
             ],
         )
+
+        return self.fetch_by_alternate_key(client,self.acc_document_alternatekey)
 
     def convert_to_odata_payload(self)->dict:
 
@@ -113,7 +150,13 @@ class Document(EntityBase):
                     lookup_id = field_value
 
                     if lookup_id:
-                        binding_collection = target_entity if target_entity.endswith("s") else f"{target_entity}s"
+                        if target_entity.endswith("s"):
+                            binding_collection = target_entity
+                        elif target_entity.endswith("y"):
+                            # transactioncurrency -> transactioncurrencies
+                            binding_collection = f"{target_entity[:-1]}ies"
+                        else:
+                            binding_collection = f"{target_entity}s"
                         payload[f"{field_name}@odata.bind"] = f"/{binding_collection}({lookup_id})"
                         continue
             payload[field_name] = field_value
@@ -121,14 +164,14 @@ class Document(EntityBase):
         return payload
 
     @staticmethod
-    def fetch_by_alternate_key(client: DataverseClient, alternate_key: str) -> Optional[Attachment]:
+    def fetch_by_alternate_key(client: DataverseClient, alternate_key: str) -> Optional["Document"]:
         """Fetch an `acc_attachment` by its alternate key from Dataverse.
 
         Returns an `Attachment` instance when found, otherwise `None`.
         """
         # Build simple OData filter using the alternate key column
-        filter_str = f"acc_attachment_alternatekey eq '{alternate_key}'"
-        result = client.records.list("acc_attachment", filter=filter_str, top=1)
+        filter_str = f"acc_document_alternatekey eq '{alternate_key}'"
+        result = client.records.list("acc_document", filter=filter_str, top=1)
         record = result.first()
         if record is None:
             return None
@@ -137,4 +180,5 @@ class Document(EntityBase):
 
         print(f"Fetched attachment record from Dataverse: {data}")
 
-        return Attachment.model_validate(data)
+        return Document.model_validate(data)
+

@@ -116,7 +116,7 @@ def test_document_optional_fields_default_to_none(minimal_document: Document):
     # System fields inherited from EntityBase are only populated on read
     assert minimal_document.modifiedon is None
     assert minimal_document.createdon is None
-    assert minimal_document.ownerid_value is None
+    assert minimal_document.ownerid is None
 
 
 def test_document_computed_alternate_key_matches_manual_hash(full_document: Document):
@@ -268,8 +268,8 @@ def test_document_model_validate_accepts_dataverse_payload():
     assert document.acc_net_amount == Decimal("100.50")
 
     # System fields land on the EntityBase attributes
-    assert document.ownerid_value == payload["_ownerid_value"]
-    assert document.createdby_value == payload["_createdby_value"]
+    assert document.ownerid == payload["_ownerid_value"]
+    assert document.createdby == payload["_createdby_value"]
     assert document.versionnumber == 987654
     assert document.modifiedon is not None
 
@@ -305,7 +305,9 @@ def test_document_convert_to_odata_payload(full_document: Document):
     # Dates and decimals are JSON-serialised
     assert payload["acc_invoice_date"] == "2026-08-07"
     assert payload["acc_period_of_service_start_date"] == "2026-07-01"
-    assert payload["acc_net_amount"] == "100.50"
+
+    ## The acc_net_amount field is serialized as float
+    assert payload["acc_net_amount"] == 100.50
 
     # Plain scalars pass through untouched
     assert payload["acc_invoice_id"] == "INV-2026-0815"
@@ -331,14 +333,7 @@ def test_document_convert_to_odata_payload_drops_unset_optionals(minimal_documen
     assert "acc_document_alternatekey" in payload
 
 
-@pytest.mark.xfail(
-    reason=(
-        "convert_to_odata_payload pluralises the target entity by appending 's', which "
-        "yields /transactioncurrencys(...). The Dataverse entity set for "
-        "transactioncurrency is /transactioncurrencies(...), so this bind will 404."
-    ),
-    strict=True,
-)
+
 def test_document_transaction_currency_binds_to_correct_entity_set(full_document: Document):
     """Guards the known-wrong pluralisation of the transactioncurrency entity set."""
 

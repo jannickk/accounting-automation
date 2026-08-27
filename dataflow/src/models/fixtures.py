@@ -6,10 +6,12 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from azure.identity import ClientSecretCredential
 from config.config import Config
 import pytest
+from datetime import datetime, timezone
 import pytest_asyncio
 from .entity_base import EntityBase
 from PowerPlatform.Dataverse.client import DataverseClient
 from .acc_email import Email, EmailFactory
+from .acc_attachment import Attachment, AttachmentFactory,ProcessedDocumentAIStatus
 from uuid import uuid4
 from typing import Generator
 from dotenv import load_dotenv
@@ -105,3 +107,31 @@ def email_in_dataverse(client: DataverseClient, email: Email):
 
 
     yield email.upsert_to_dataverse(client)  # Ensure the email is upserted to Dataverse
+
+
+
+
+
+@pytest.fixture
+def attachment_in_dataverse(client: DataverseClient, email_in_dataverse: Email):
+
+
+    attachment = AttachmentFactory.create_attachment(
+        email=email_in_dataverse,
+        hash_id="hash-xyz-789",
+        attachment_name="report.pdf",
+        attachment_type="application/pdf",
+        storage_uri="https://storageaccount.blob.core.windows.net/reports",
+        blob_name="report.pdf",
+        directory="ingest/2026/8",
+        container="accounts-payable",
+    )
+
+    # Attempt to upsert the attachment into Dataverse
+    try:
+        inserted_attachment = attachment.upsert_to_dataverse(client)
+    except Exception as e:
+        pytest.fail(f"Upserting attachment to Dataverse failed: {e}")
+
+
+    yield inserted_attachment

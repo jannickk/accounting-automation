@@ -142,7 +142,7 @@ def test_email_model_validate_accepts_dataverse_payload():
 
     assert email.acc_emailId == payload["acc_emailid"]
     assert email.acc_sender_address == "alice@example.com"
-    assert email.ownerid_value == payload["_ownerid_value"]
+    assert email.ownerid == payload["_ownerid_value"]
 
 
 def test_email_convert_to_odata_payload():

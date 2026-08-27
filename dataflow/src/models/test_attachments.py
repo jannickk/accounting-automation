@@ -3,7 +3,7 @@ import hashlib
 from typing import Generator
 import pytest
 from uuid import uuid4
-
+from datetime import datetime, timezone
 from pydantic import ValidationError
 from .entity_base import EntityBase
 from .acc_attachment import AttachmentFactory, Attachment
@@ -115,7 +115,7 @@ def test_attachment_convert_to_odata_payload(email_with_id: Email):
     assert odata_payload["acc_container"] == "accounts-payable"
 
     # Validate boolean fields
-    assert odata_payload["acc_processeddocumentai"] is False
+    assert odata_payload["acc_processed_document_ai"] is False
     assert odata_payload["acc_uploadedtodatev"] is False
 
     # Validate that the computed alternate key is included
@@ -124,8 +124,11 @@ def test_attachment_convert_to_odata_payload(email_with_id: Email):
     assert len(odata_payload["acc_attachment_alternatekey"]) == 64  # SHA256 hex digest length
 
     # Validate that None-valued datetime fields are excluded (exclude_none behavior)
-    # acc_processeddatetime and acc_uploadeddatetime should not be in payload
-    assert "acc_processeddatetime" not in odata_payload or odata_payload["acc_processeddatetime"] is not None
+    # acc_processed_document_ai_datetime and acc_uploadeddatetime should not be in payload
+    assert (
+        "acc_processed_document_ai_datetime" not in odata_payload
+        or odata_payload["acc_processed_document_ai_datetime"] is not None
+    )
     assert "acc_uploadeddatetime" not in odata_payload or odata_payload["acc_uploadeddatetime"] is not None
 
 def test_create_attachment_insert_into_dataverse(email_in_dataverse: Email, client: DataverseClient):
@@ -156,4 +159,17 @@ def test_create_attachment_insert_into_dataverse(email_in_dataverse: Email, clie
 
     assert inserted_attachment.acc_attachmentId is not None
     assert inserted_attachment.modifiedon is not None
+
+
+
+def test_update_attachment_as_failed(client: DataverseClient, attachment_in_dataverse: Attachment):
+
+    ## set some properties
+    attachment_in_dataverse.acc_processed_document_ai=True
+    attachment_in_dataverse.acc_processed_document_ai_datetime = datetime.now(timezone.utc)
+    attachment_in_dataverse.acc_processed_document_ai_status = ProcessedDocumentAIStatus.failed
+
+    attachment_in_dataverse.upsert_to_dataverse(client)
+
+
 

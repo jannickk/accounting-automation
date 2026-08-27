@@ -1,7 +1,12 @@
+from datetime import datetime
+from typing import Optional
+
+from pydantic import BaseModel, ConfigDict, Field
 from enum import Enum, IntEnum
 from pydantic import BaseModel
 from typing import Annotated
-from annotated_types import Gt
+from annotated_types import Gt, Ge
+
 
 class PeriodOfService(BaseModel):
 
@@ -21,14 +26,11 @@ class ProductOrService(BaseModel):
 class DocumentData(BaseModel):
     creditor: str
     date_of_invoice: str
-    period_of_service: PeriodOfService
+    period_of_service: PeriodOfService | None
     debitor: str
-    total_amount: str
-    total_amount_of_taxes_paid: Annotated[float, Gt(0)]
+    total_amount: float
+    total_amount_of_taxes_paid: Annotated[float, Ge(0)]
+    net_amount: float
     invoice_number: str
-    products_services_received: list[ProductOrService]
-    transaction_currency: CurrenciesEnum
-
-
-
-print(DocumentData.model_json_schema())
+    products_services_received: list[ProductOrService] | None
+    transaction_currency: str

@@ -28,13 +28,13 @@ Dataverse adds to each entity definiton a set of system fields. These fields are
 
 * modifiedon
 
-* _owninguser_value
+* owninguser
        
 * overriddencreatedon
        
 * importsequencenumber
        
-* _modifiedonbehalfby_value
+* modifiedonbehalfby
        
 * statecode
        
@@ -42,20 +42,20 @@ Dataverse adds to each entity definiton a set of system fields. These fields are
 
 * utcconversiontimezonecode
     
-* _createdonbehalfby_value
+* createdonbehalfby
      
-* _modifiedby_value       
+* modifiedby     
          
 * createdon
 
-* _owningbusinessunit_value      
+* owningbusinessunit      
         
 * statuscode
       
-* _owningteam_value
+* owningteam
      
-* _createdby_value
+* createdby
     
-* _ownerid_value
+* ownerid
       
 * timezoneruleversionnumber

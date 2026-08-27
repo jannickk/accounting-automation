@@ -211,13 +211,13 @@ def upsert_entity_definition(entity_definition:dict, solution_unique_name: str =
 
     if entity_definition["@odata.type"]== "Microsoft.Dynamics.CRM.EntityMetadata":
 
-        schema_name = entity_definition.get("SchemaName") or entity_definition.get("LogicalName")
+        schema_name = entity_definition.get("SchemaName") or entity_definition.get("SchemaName")
 
         if not schema_name:
 
-            raise ValueError("Entity JSON must include a SchemaName or LogicalName")
+            raise ValueError("Entity JSON must include a SchemaName or SchemaName")
 
-        get_endpoint= config.ENVIRONMENT_URL + f"/api/data/v9.2/EntityDefinitions?$filter=LogicalName%20eq%20'{schema_name}'"
+        get_endpoint= config.ENVIRONMENT_URL + f"/api/data/v9.2/EntityDefinitions?$filter=SchemaName%20eq%20'{schema_name}'"
 
         session = requests.Session()
         session.headers.update(get_request_headers(solution_unique_name))
@@ -247,7 +247,7 @@ def upsert_entity_definition(entity_definition:dict, solution_unique_name: str =
                     # re-query to obtain metadata id
             escaped_schema_name = schema_name.replace("'", "''")
             metadata_lookup_resp = session.get(
-                f"{env_url}/api/data/v9.2/EntityDefinitions?$filter=LogicalName%20eq%20'{escaped_schema_name}'"
+                f"{env_url}/api/data/v9.2/EntityDefinitions?$filter=SchemaName%20eq%20'{escaped_schema_name}'"
             )
             metadata_lookup_resp.raise_for_status()
             metadata_items = metadata_lookup_resp.json().get("value", [])
@@ -262,7 +262,7 @@ def upsert_entity_definition(entity_definition:dict, solution_unique_name: str =
                     key_payload = {
                         "@odata.type": "#Microsoft.Dynamics.CRM.EntityKeyMetadata",
                         "SchemaName": key["SchemaName"],
-                        "LogicalName": key.get("LogicalName", key["SchemaName"]),
+                        "SchemaName": key.get("SchemaName", key["SchemaName"]),
                         "DisplayName": key.get("DisplayName", {"LocalizedLabels": [{"Label": key["SchemaName"], "LanguageCode": 1033}]}),
                         "KeyAttributes": key["KeyAttributes"]
                     }
@@ -377,7 +377,7 @@ def sync_entity_attributes_with_schema(entity_logical_name: str, entity_definiti
         solution_unique_name (str, optional): Solution unique name for header if needed
     """
     # 1. Get the EntityDefinition MetadataId
-    get_endpoint = f"{config.ENVIRONMENT_URL}/api/data/v9.2/EntityDefinitions?$filter=LogicalName eq '{entity_logical_name}'"
+    get_endpoint = f"{config.ENVIRONMENT_URL}/api/data/v9.2/EntityDefinitions?$filter=SchemaName eq '{entity_logical_name}'"
     session = requests.Session()
     session.headers.update(get_request_headers(solution_unique_name))
     resp = session.get(get_endpoint)
@@ -411,51 +411,52 @@ def sync_entity_attributes_with_schema(entity_logical_name: str, entity_definiti
   
     # Exclude LookupAttribute Metadata because they are created by creating relationships
 
-    current_attr_names = {a['LogicalName'] for a in current_attrs_without_lookups}
+    current_attr_names = {a['SchemaName'] for a in current_attrs_without_lookups}
 
-    schema_attr_names = {a['LogicalName'] if 'LogicalName' in a else a.get('SchemaName') for a in entity_definition.get('Attributes', [])}
+    schema_attr_names = {a['SchemaName'] for a in entity_definition.get('Attributes', [])}
+
+
+    diff_attr_names = [schema_name for schema_name in schema_attr_names if not schema_name in current_attr_names]
+
+    attr_to_add = [attr for attr in entity_definition.get('Attributes', []) if attr['SchemaName'] in diff_attr_names ]
 
     # 3. Add missing attributes
-    for attr_name in schema_attr_names - current_attr_names:
+    for attr in attr_to_add:
 
         # Minimal attribute payload, customize as needed
 
-        print("adding missing attribute " + attr_name + " to entity " + entity_logical_name)
-        payload = {
-            "@odata.type": "#Microsoft.Dynamics.CRM.StringAttributeMetadata",  # Example for string, adjust as needed
-            "LogicalName": attr_name,
-            "DisplayName": {"LocalizedLabels": [{"Label": attr_name, "LanguageCode": 1033}]},
-            "SchemaName": attr_name,
-            "RequiredLevel": {"Value": "None"},
-            "MaxLength": 100
-        }
+        print("adding missing attribute " + attr['SchemaName'] + " to entity " + entity_logical_name)
+        payload = attr
+
+
+
         create_attr_endpoint = f"{config.ENVIRONMENT_URL}/api/data/v9.2/EntityDefinitions({metadata_id})/Attributes"
         create_resp = session.post(create_attr_endpoint, json=payload)
         try:
             create_resp.raise_for_status()
-            print(f"Added attribute {attr_name}")
+            print(f"Added attribute {attr['SchemaName'] }")
         except Exception:
-            print(f"Failed to add attribute {attr_name}: {create_resp.text}")
+            print(f"Failed to add attribute {attr['SchemaName'] }: {create_resp.text}")
 
     # 4. Delete attributes not in schema
     for attr in current_attrs_without_lookups:
 
-        print("checking attribute " + attr['LogicalName'] + " in entity " + entity_logical_name)
-        if attr['LogicalName'] not in schema_attr_names:
+        print("checking attribute " + attr['SchemaName'] + " in entity " + entity_logical_name)
+        if attr['SchemaName'] not in schema_attr_names:
 
             if attr["IsCustomAttribute"] == True:
 
-                print(f"Attribute {attr['LogicalName']} is not in schema and is a custom attribute, deleting it.")
+                print(f"Attribute {attr['SchemaName']} is not in schema and is a custom attribute, deleting it.")
 
-                print("deleting attribute " + attr['LogicalName'] + " from entity " + entity_logical_name)
+                print("deleting attribute " + attr['SchemaName'] + " from entity " + entity_logical_name)
                 attr_id = attr['MetadataId']
                 delete_endpoint = f"{config.ENVIRONMENT_URL}/api/data/v9.2/EntityDefinitions({metadata_id})/Attributes({attr_id})"
                 del_resp = session.delete(delete_endpoint)
                 try:
                     del_resp.raise_for_status()
-                    print(f"Deleted attribute {attr['LogicalName']}")
+                    print(f"Deleted attribute {attr['SchemaName']}")
                 except Exception:
-                    print(f"Failed to delete attribute {attr['LogicalName']}: {del_resp.text}")
+                    print(f"Failed to delete attribute {attr['SchemaName']}: {del_resp.text}")
             else:
 
-                print(f"Attribute {attr['LogicalName']} is not in schema but is a system attribute, skipping deletion.")
+                print(f"Attribute {attr['SchemaName']} is not in schema but is a system attribute, skipping deletion.")

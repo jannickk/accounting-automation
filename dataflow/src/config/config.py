@@ -19,3 +19,5 @@ class Config(BaseSettings):
     CONTAINER_NAME: str = "accounts-payable"
     MISTRAL_MCP_CLIENT_ID: str
     MISTRAL_MCP_CLIENT_SECRET: str
+    UPLOAD_INBOX_EMAIL: str
+    SENDER_EMAIL_DATEV: str

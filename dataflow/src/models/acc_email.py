@@ -14,7 +14,11 @@ class Email(EntityBase):
 
 
     acc_outlook_emailid: str = Field(max_length=200)
-    acc_isduplicateof: Optional[str] = Field(default=None, foreign_key="acc_email.acc_emailId")
+    acc_isduplicateof: Optional[str] = Field(
+        default=None,
+        foreign_key="acc_email.acc_emailId",
+        validation_alias=AliasChoices("acc_isduplicateof", "_acc_isduplicateof_value"),
+    )
     acc_subject: Optional[str] = Field(default=None, max_length=500)
     acc_numofattachments: Optional[int] = None
     acc_receiveddatetime: datetime
