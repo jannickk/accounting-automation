@@ -4,10 +4,12 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from models import Email, EmailFactory, Attachment, AttachmentFactory, ProcessedDocumentAIStatus
 from config.config import Config
 from PowerPlatform.Dataverse.client import DataverseClient
+from PowerPlatform.Dataverse.aio import AsyncDataverseClient
 from PowerPlatform.Dataverse.models import col
 from datetime import timezone,timedelta,datetime
 from azure.identity import ClientSecretCredential
-from typing import Generator, Any, Dict
+from azure.identity.aio import ClientSecretCredential as AsyncClientSecretCredential
+from typing import AsyncGenerator, Generator, Any, Dict
 
 def get_dataverse_client(config: Config) -> DataverseClient:
     """
@@ -27,6 +29,33 @@ def get_dataverse_client(config: Config) -> DataverseClient:
     credential = ClientSecretCredential(tenant_id, client_id, client_secret)
     return DataverseClient(environment_url, credential)
 
+def get_async_dataverse_client(config: Config) -> AsyncDataverseClient:
+    """
+    Create and return an AsyncDataverseClient instance using the Dataverse configuration.
+
+    The returned client owns an aiohttp session, so it should be used as an async
+    context manager (or closed explicitly with 'await client.aclose()') to release
+    the connection pool:
+
+        async with get_async_dataverse_client(config) as client:
+            async for attachment in get_attachments_to_upload_to_datev(client):
+                ...
+
+    Returns:
+        AsyncDataverseClient: An instance of the AsyncDataverseClient class.
+    """
+
+    tenant_id = config.DATAVERSE_TENANT_ID
+    client_id = config.DATAVERSE_CLIENT_ID
+    client_secret = config.DATAVERSE_CLIENT_SECRET
+    environment_url = config.DATAVERSE_ENVIRONMENT_URL
+
+    if not all([tenant_id, client_id, client_secret, environment_url]):
+        raise ValueError("Missing required Dataverse environment variables.")
+
+    credential = AsyncClientSecretCredential(tenant_id, client_id, client_secret)
+    return AsyncDataverseClient(environment_url, credential)
+
 def get_unprocessed_documents_from_dataverse(client: DataverseClient)-> Generator[Attachment,Any,Any]:
     ## Yield a generator for the files not yet processed in Mistral
 
@@ -44,6 +73,36 @@ def get_attachments_not_uploaded_to_datev(client: DataverseClient)-> Generator[A
 
     for record in records:
         yield Attachment.model_validate(record.to_dict())
+
+
+async def get_attachments_to_upload_to_datev(client: AsyncDataverseClient)-> AsyncGenerator[Attachment,None]:
+    """
+    Yield an async generator for the attachments which still have to be uploaded to DATEV.
+
+    An attachment qualifies when it is not yet uploaded to DATEV
+    ('acc_uploadedtodatev' is False) and when it is not marked as a duplicate of
+    another attachment (the 'acc_duplicate_attachmentId' lookup is empty).
+    Lookup columns are filtered through their '_<logicalname>_value' form.
+
+    The records are fetched page by page, so only one page is held in memory
+    while the caller iterates. Each iteration of the underlying pager triggers
+    one HTTP request, which is awaited without blocking the event loop.
+
+    Requires an AsyncDataverseClient (see get_async_dataverse_client) and has to
+    be consumed with 'async for':
+
+        async for attachment in get_attachments_to_upload_to_datev(client):
+            await upload_document_to_datev(config, attachment)
+    """
+
+    pages = (client.query.builder("acc_attachment")
+             .where(col("acc_uploadedtodatev")==False)
+             .where(col("_acc_duplicate_attachmentid_value").is_null())
+             .execute_pages())
+
+    async for page in pages:
+        for record in page:
+            yield Attachment.model_validate(record.to_dict())
 
 
 def get_creditor_id_by_name(client: DataverseClient, creditor_name:str)-> str | None:

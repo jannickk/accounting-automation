@@ -144,8 +144,6 @@ if __name__=="__main__":
 
     for attachment in attachments_to_process:
 
-        print(attachment)
-
         sas_url = get_short_lived_sas_url(service,attachment.acc_container,attachment.acc_directory,attachment.acc_blobname)
 
 
@@ -186,8 +184,6 @@ if __name__=="__main__":
             tools=[{"type": "connector", "connector_id": dataverse_connector.id}]
         )
 
-        print("response was:")
-        print(response)
 
         choices = getattr(response,"choices")
 

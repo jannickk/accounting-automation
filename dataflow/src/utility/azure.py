@@ -3,6 +3,8 @@ from azure.storage.filedatalake.aio import FileSystemClient as AsyncFileSystemCl
 from azure.storage.filedatalake.aio import DataLakeServiceClient as AsyncDataLakeServiceClient
 from azure.storage.filedatalake.aio import StorageStreamDownloader as AsyncStorageStreamDownloader
 import sys
+import json
+import aiohttp
 import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -34,6 +36,40 @@ async def copy_file_from_one_folder_to_another(config: Config, source_path, targ
 
             await target_file_client.upload_data(bytes_data, length=len(bytes_data), overwrite=True)
           
+
+async def download_file_from_azure_storage(config: Config, source_path: str, container: str | None = None) -> bytes:
+    """
+    Download the content of a single file from the Data Lake as raw bytes.
+
+    'source_path' is the path of the file within the filesystem/container
+    'container' is the filesystem/container the file lives in; defaults to
+    'config.CONTAINER_NAME' when not given explicitly
+
+    Returns:
+        The file content as bytes. To hand it over to 'upload_document_to_datev'
+        it has to be base64 encoded first, e.g.
+        'document["contentBytes"] = base64.b64encode(content).decode("utf-8")'
+    """
+
+    file_system = container or config.CONTAINER_NAME
+
+    print(f"Trying to download from path {source_path} in container {file_system}")
+
+    async with AsyncDataLakeServiceClient.from_connection_string(config.DATALAKE_STORAGE_CONNECTION_STRING) as service_client:
+
+        async with service_client.get_file_system_client(file_system = file_system) as filesystem_client:
+
+            file_client = filesystem_client.get_file_client(source_path)
+
+            if await file_client.exists():
+
+                download: AsyncStorageStreamDownloader = await file_client.download_file()
+
+                return await download.readall()
+
+            else:
+
+                raise Exception(f"Failed to download file {source_path}")
 
 async def upload_to_azure_datalake_storage(base64_data: str, content_type: str, container_name: str, blob_name: str) -> str:
     """

@@ -2,7 +2,7 @@
 
 ## Project Context
 
-Dataflow project to read out attachments of an online exchange server and process each document using Mistral.AI document intelligence
+Dataflow project to read out attachments of an online exchange server and process each document using Mistral AI document intelligence
 
 ## Architecture & Code Map
 - `src/dataflow/` - python dataflow code 
