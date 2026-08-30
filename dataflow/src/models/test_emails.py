@@ -159,6 +159,7 @@ def test_email_convert_to_odata_payload():
     sample = {
         "id": "msg-1",
         "subject": "Test Email",
+        "_acc_duplicate_emailid_value" : "3b1d3ac8-ab35-f111-88b4-000d3ab76fd8",
         "numAttachments": 2,
         "acc_outlook_emailid": "msg-1",
         "receivedDateTime": "2026-08-07T12:00:00Z",
@@ -168,6 +169,8 @@ def test_email_convert_to_odata_payload():
     }
 
     email = EmailFactory.create_email(sample)
+
+    print(email)
     odata_payload = email.convert_to_odata_payload()
 
     # Validate payload is a dictionary
@@ -184,6 +187,8 @@ def test_email_convert_to_odata_payload():
     assert "acc_sender_address" in odata_payload
     assert "acc_email_alternatekey" in odata_payload
 
+
+    assert email.acc_duplicate_emailid == "3b1d3ac8-ab35-f111-88b4-000d3ab76fd8"
     # Validate field values
     assert odata_payload["acc_outlook_emailid"] == "msg-1"
     assert odata_payload["acc_subject"] == "Test Email"

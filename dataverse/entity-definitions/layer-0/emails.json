@@ -39,13 +39,6 @@
       "FormatName": { "Value": "Text" }
     },
     {
-      "@odata.type": "Microsoft.Dynamics.CRM.LookupAttributeMetadata",
-      "SchemaName": "acc_isduplicateof",
-      "RequiredLevel": { "Value": "None", "CanBeChanged": true },
-      "DisplayName": { "LocalizedLabels": [ { "Label": "Is Duplicate Of Email(Hash)", "LanguageCode": 1033 } ] },
-      "Targets": [ "acc_email" ]
-    },
-    {
       "@odata.type": "Microsoft.Dynamics.CRM.StringAttributeMetadata",
       "SchemaName": "acc_subject",
       "RequiredLevel": { "Value": "None", "CanBeChanged": true },

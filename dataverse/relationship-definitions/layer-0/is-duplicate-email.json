@@ -1,24 +1,24 @@
 {
   "@odata.type": "Microsoft.Dynamics.CRM.OneToManyRelationshipMetadata",
-  "ReferencedEntity": "acc_attachment",
-  "ReferencingEntity": "acc_attachment",
-  "SchemaName": "acc_DuplicateAttachment",
+  "ReferencedEntity": "acc_email",
+  "ReferencingEntity": "acc_email",
+  "SchemaName": "acc_duplicate_email",
   "Lookup": {
     "AttributeType": "Lookup",
-    "SchemaName": "acc_duplicate_attachmentId",
+    "SchemaName": "acc_duplicate_emailid",
     "RequiredLevel": {
       "Value": "None",
       "CanBeChanged": true
     },
     "DisplayName": {
-      "LocalizedLabels": [ { "Label": "Duplicate Attachment ID", "LanguageCode": 1033 } ]
+      "LocalizedLabels": [ { "Label": "Duplicate Email ID", "LanguageCode": 1033 } ]
     },
     "Description": {  
         "@odata.type": "Microsoft.Dynamics.CRM.Label",  
         "LocalizedLabels": [  
             {  
             "@odata.type": "Microsoft.Dynamics.CRM.LocalizedLabel",  
-            "Label": "Duplicate Attachment by Content",  
+            "Label": "Duplicate Email by Content",  
             "LanguageCode": 1033  
             }  
         ]

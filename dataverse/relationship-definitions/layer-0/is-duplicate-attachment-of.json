@@ -2,10 +2,10 @@
   "@odata.type": "Microsoft.Dynamics.CRM.OneToManyRelationshipMetadata",
   "ReferencedEntity": "acc_attachment",
   "ReferencingEntity": "acc_attachment",
-  "SchemaName": "acc_DuplicateAttachment",
+  "SchemaName": "acc_duplicate_attachment",
   "Lookup": {
     "AttributeType": "Lookup",
-    "SchemaName": "acc_duplicate_attachmentId",
+    "SchemaName": "acc_duplicate_attachmentid",
     "RequiredLevel": {
       "Value": "None",
       "CanBeChanged": true

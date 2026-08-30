@@ -15,6 +15,7 @@ import sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from models import Email, EmailFactory, Attachment, AttachmentFactory, ISO8601
 from config.config import Config
+from utility import get_email_id_by_hash_id, get_attachment_id_by_hash_id
 import base64
 from datetime import datetime, timezone
 import hashlib
@@ -26,11 +27,11 @@ from google.cloud.bigquery import ScalarQueryParameter, QueryJobConfig
 from dotenv import load_dotenv
 
 
-logging.basicConfig(level=logging.DEBUG, stream=sys.stdout)
+logging.basicConfig(level=logging.INFO, stream=sys.stdout)
 
 logger = logging.getLogger(__name__)
 
-logger.addHandler(logging.StreamHandler(sys.stdout)) # defaults to sys.stderr
+logger.addHandler(logging.StreamHandler(sys.stdout))
 
 logging.getLogger("azure.identity").setLevel(logging.WARNING)
 logging.getLogger("urllib3").setLevel(logging.WARNING)
@@ -56,50 +57,9 @@ def get_dataverse_client(config: Config) -> DataverseClient:
     credential = ClientSecretCredential(tenant_id, client_id, client_secret)
     return DataverseClient(environment_url, credential)
 
-def get_bigquery_client() -> Client:
-    """
-    Create and return a BigQuery Client instance using service account credentials from environment variables.
-    
-    Returns:
-        google.cloud.bigquery.Client: An instance of the BigQuery Client class.
-    """
-    if os.environ.get("GCP_SERVICE_ACCOUNT_KEY"):
-        service_account_info = json.loads(os.environ.get("GCP_SERVICE_ACCOUNT_KEY"))
-        credentials = service_account.Credentials.from_service_account_info(service_account_info)
-        return Client(credentials=credentials, project=service_account_info.get("project_id"))
-    else:
-        return Client()
 
 
-def run_query(client: Client, sql: str):
-    job = client.query(sql)
-    return list(job.result())
 
-async def run_query_async(client: Client, sql: str):
-    return await asyncio.to_thread(run_query, client, sql)
-
-async def get_checkpoint_from_bigquery():
-    
-    dataset_id = os.environ.get("GCP_DATASET_ID")
-    table_id = "emails"
-    project_id = os.environ.get("GCP_PROJECT_ID")
-
-    query = f"""
-        SELECT MAX(receivedDateTime) as last_checkpoint
-        FROM `{project_id}.{dataset_id}.{table_id}`
-    """
-
-    client = get_bigquery_client()
-    result = await run_query_async(client, query)
-
-    print(f"obtained following checkpoint {result}")
-
-    if result[0]["last_checkpoint"]== None:
-        checkpoint = "2025-11-25T10:00:00Z"
-    else:
-        checkpoint = result[0]["last_checkpoint"]
-
-    return checkpoint
 
 async def get_checkpoint_from_dataverse(config: Config)->ISO8601:
     
@@ -114,20 +74,14 @@ async def get_checkpoint_from_dataverse(config: Config)->ISO8601:
     
     if df.empty:
 
-        checkpoint = ISO8601(value="2025-11-25T10:00:00Z")
+        checkpoint = ISO8601(value="2025-12-31T10:00:00Z")
     else:
 
         df = df.sort_values(by="acc_receiveddatetime", ascending=False)
 
         checkpoint = ISO8601(value=df.iloc[0]["acc_receiveddatetime"])
 
-    return ISO8601(value="2026-07-26T10:00:00Z")
-
-def get_blob_name_for_document_uri(document_uri: str) -> str:
-    
-    document_uri = document_uri.replace("gs://", "").split("/")[1:]
-
-    return "/".join(document_uri)
+    return checkpoint
 
 
 def get_filename_from_document_uri(storage_account_url: str) -> str:
@@ -172,159 +126,6 @@ def get_container_name_from_document_uri(storage_account_url: str) -> str:
     container_name = path.split("/")[0]
     return container_name
 
-async def write_document(
-    email_id: str,
-    from_email_address_name: str,
-    hash_id: str,
-    attachment_name: str,
-    attachment_type: str,
-    gcs_uri: str
-) -> None:
-    """
-    Write attachment data to the documents BigQuery table.
-    
-    Args:
-        email_id: The email ID (hashID from emails table)
-        hash_id: The unique hash ID for this document/attachment
-        attachment_name: Name of the attachment file
-        attachment_type: MIME type of the attachment (e.g., 'application/pdf')
-        gcs_uri: GCS URI where the attachment is stored
-        processed: Whether the document has been processed (default: False)
-    """
-    dataset_id = os.environ.get("GCP_DATASET_ID", "accounting")
-    table_id = "documents"
-    project_id = os.environ.get("GCP_PROJECT_ID")
-    
-    logger.info(f"Writing document record for attachment {attachment_name} (hash: {hash_id})")
-    
-    # Create row with all required fields
-    row = {
-        "emailID": email_id,
-        "hashID": hash_id,
-        "processedDocumentAI": False,
-        "attachmentName": attachment_name,
-        "attachmentType": attachment_type,
-        "gcsUri": gcs_uri,
-        "finalGcsUri": f"gs://{os.environ.get('GCP_BUCKET_NAME')}/processed/{from_email_address_name}/{attachment_name}",
-        "blobName": get_blob_name_for_document_uri(gcs_uri),
-        "finalBlobName": f"processed/{from_email_address_name}/{attachment_name}",
-        "uploadedToDatev": False,
-        "uploadedDatetime": None,
-        "processedDatetime": None,
-        "fromEmailAddressName": from_email_address_name,
-        "isDuplicateOf": None
-    }
-
-
-    print(f"Writing following row to BigQuery table {project_id}.{dataset_id}.{table_id}: {row}")
-    
-    # Insert row into BigQuery
-    def insert_row():
-        """Synchronous insert operation"""
-        table_ref = f"{project_id}.{dataset_id}.{table_id}"
-        errors = client.insert_rows_json(table_ref, [row])
-        if errors:
-            raise Exception(f"BigQuery insert errors: {errors}")
-    
-    await asyncio.to_thread(insert_row)
-    
-    logger.info(f"Successfully wrote document record for {attachment_name} to {table_id}")
-
-
-async def email_exists_by_hash_id(hash_id: str) -> bool:
-    """
-    Check whether an email exists in BigQuery by its hashID.
-    
-    Args:hash_id: The hash ID of the email to check
-        hash_id: The hash ID of the email to check
-    
-    Returns:
-        Boolean indicating whether the email exists in the emails table
-    """
-    dataset_id = os.environ.get("GCP_DATASET_ID", "accounting")
-    table_id = os.environ.get("GCP_TABLE_ID", "emails")
-    project_id = os.environ.get("GCP_PROJECT_ID")
-    
-    logger.info(f"Checking if email with hashID {hash_id} exists")
-    
-    # Query for email with the given hashID
-    query = f"""
-        SELECT COUNT(*) as email_count
-        FROM `{project_id}.{dataset_id}.{table_id}`
-        WHERE hashID = @hash_id
-    """
-    
-    def run_query():
-        """Synchronous query execution with parameters"""
-        
-        
-        job_config = QueryJobConfig(
-            query_parameters=[
-                ScalarQueryParameter("hash_id", "STRING", hash_id)
-            ]
-        )
-        
-        query_job = client.query(query, job_config=job_config)
-        results = query_job.result()
-        return [dict(row) for row in results]
-    
-    # Run query in thread pool
-    result = await asyncio.to_thread(run_query)
-    
-    exists = result[0]["email_count"] > 0
-    
-    logger.info(f"Email with hashID {hash_id} {'exists' if exists else 'does not exist'}")
-    
-    return exists
-
-
-async def attachment_exists_by_hash_id(hash_id: str) -> bool:
-    """
-    Check whether an attachment/document exists in BigQuery by its hashID.
-    
-    Args:
-        hash_id: The hash ID of the attachment to check
-    
-    Returns:
-        Boolean indicating whether the attachment exists in the documents table
-    """
-    dataset_id = os.environ.get("GCP_DATASET_ID", "accounting")
-    table_id = "documents"
-    project_id = os.environ.get("GCP_PROJECT_ID")
-    
-    logger.info(f"Checking if attachment with hashID {hash_id} exists")
-    
-    # Query for attachment with the given hashID
-    query = f"""
-        SELECT COUNT(*) as attachment_count
-        FROM `{project_id}.{dataset_id}.{table_id}`
-        WHERE hashID = @hash_id
-    """
-    
-    def run_query():
-        """Synchronous query execution with parameters"""
-        from google.cloud.bigquery import ScalarQueryParameter, QueryJobConfig
-        
-        job_config = QueryJobConfig(
-            query_parameters=[
-                ScalarQueryParameter("hash_id", "STRING", hash_id)
-            ]
-        )
-        
-        query_job = client.query(query, job_config=job_config)
-        results = query_job.result()
-        return [dict(row) for row in results]
-    
-    # Run query in thread pool
-    result = await asyncio.to_thread(run_query)
-    
-    exists = result[0]["attachment_count"] > 0
-    
-    logger.info(f"Attachment with hashID {hash_id} {'exists' if exists else 'does not exist'}")
-    
-    return exists
-
-
 async def get_access_token(config: Config) -> str:
 
 
@@ -346,7 +147,7 @@ async def get_access_token(config: Config) -> str:
             }
         )
         if result.status != 200:
-            print(f"Error acquiring token: {result.status}")
+            logger.debug(f"Error acquiring token: {result.status}")
             return None
 
         else:
@@ -355,13 +156,13 @@ async def get_access_token(config: Config) -> str:
             if "access_token" in response_json.keys():
                 return response_json["access_token"]
             else:
-                print(f"Error acquiring token: {response_json.get('error')}")
+                logger.debug(f"Error acquiring token: {response_json.get('error')}")
                 return None
     
     if "access_token" in result:
         return result["access_token"]
     else:
-        print(f"Error acquiring token: {result.get('error')}")
+        logger.debug(f"Error acquiring token: {result.get('error')}")
         return None
 
 
@@ -411,7 +212,6 @@ async def get_emails_from_inbox(config: Config, checkpoint:ISO8601=None)-> list:
 
     url = f"https://graph.microsoft.com/v1.0/users/{shared_email}/mailFolders/Inbox/messages"
     
-    logger.info(f"Fetching emails from: {url}")
 
     response_json = await get_json_from_url(
         url,
@@ -436,8 +236,7 @@ async def get_emails_from_inbox(config: Config, checkpoint:ISO8601=None)-> list:
         email_list.extend(response_json_iter["value"])
 
         response_json = response_json_iter
-        
-    #logger.info(f"Fetched {len(email_list)} emails")
+
 
     emails = [await get_details_of_message(config,email["id"]) for email in email_list]
 
@@ -462,7 +261,7 @@ async def get_details_of_message(config:Config, email_id: str)-> dict:
     
     url = f"https://graph.microsoft.com/v1.0/users/{shared_email}/mailFolders/Inbox/messages/{email_id}"
     
-    logger.info(f"Fetching emails from: {url}")
+    logger.debug(f"Fetching emails from: {url}")
 
     response_json = await get_json_from_url(
         url,
@@ -489,7 +288,7 @@ async def get_email_attachments_from_inbox(config: Config, email_id)-> list[dict
     
     url = f"https://graph.microsoft.com/v1.0/users/{shared_email}/messages/{email_id}/attachments"
     
-    logger.info(f"Fetching attachments for email {email_id} from: {url}")
+    logger.debug(f"Fetching attachments for email {email_id} from: {url}")
     
     response_json = await get_json_from_url(
         url,
@@ -497,7 +296,6 @@ async def get_email_attachments_from_inbox(config: Config, email_id)-> list[dict
     )
     
     attachments = response_json.get("value", [])
-    logger.info(f"Fetched {len(attachments)} attachments for email {email_id}")
     
     return attachments
 
@@ -548,52 +346,6 @@ async def upload_to_azure_datalake_storage(base64_data: str, content_type: str, 
     
     logger.info(f"Successfully uploaded {blob_name} to Data Lake filesystem {container_name}")
     return file_client.url
-
-async def upload_to_gcs(base64_data: str, content_type: str, bucket_name: str, object_name: str) -> str:
-    """
-    Upload base64 encoded data to Google Cloud Storage.
-    
-    Args:
-        base64_data: Base64 encoded string of the file content
-        bucket_name: Name of the GCS bucket
-        object_name: Name/path of the object in the bucket
-    
-    Returns:
-        The public URL of the uploaded object
-    """
-    logger.info(f"Uploading {object_name} to bucket {bucket_name}")
-    
-    # Decode base64 data
-    file_data = base64.b64decode(base64_data)
-    
-    # Initialize GCS client
-    if os.environ.get("GCP_SERVICE_ACCOUNT_KEY"):
-
-        service_account_info = json.loads(os.environ.get("GCP_SERVICE_ACCOUNT_KEY"))
-
-        credentials = service_account.Credentials.from_service_account_info(service_account_info)
-
-        storage_client = storage.Client(credentials=credentials, project=service_account_info.get("project_id"))
-
-    else:
-        storage_client = storage.Client()
-    
-    # Define upload function to run in thread
-    def upload_file():
-
-        bucket = storage_client.bucket(bucket_name)
-
-        blob = bucket.blob(object_name)
-
-        blob.upload_from_string(file_data,content_type=content_type)
-    
-    # Upload using asyncio.to_thread for async operation
-    await asyncio.to_thread(upload_file)
-    
-    logger.info(f"Successfully uploaded {object_name} to {bucket_name}")
-    
-    return f"gs://{bucket_name}/{object_name}"
-
 
 
 async def write_email_to_dataverse(config: Config, email: Email, ingest_datetime: str) -> Email:
@@ -775,7 +527,28 @@ async def get_email_by_alternate_key_dataverse(alternate_key: str, client)-> Ema
     return await asyncio.to_thread(run_query)
 
 
+async def get_attachment_by_alternate_key_dataverse(alternate_key: str, client)-> Attachment | None:
+    """
+    Fetch an attachment record from Dataverse by its ``acc_attachment_alternatekey``.
 
+
+    Returns:
+        The matching record (dict-like), or ``None`` if no attachment exists with that hash ID
+    """
+
+    def run_query()-> Email | None:
+        result = (client.query.builder("acc_attachment")
+                  .where(col("acc_attachment_alternatekey") == alternate_key)
+                  .top(1)
+                  .execute())
+        if len(result) == 0:
+            return None
+        data = result[0].to_dict()
+
+
+        return Attachment.model_validate(data)
+
+    return await asyncio.to_thread(run_query)
 
 async def get_email_by_hash_id_dataverse(hash_id: str, config: Config):
     """
@@ -951,7 +724,6 @@ async def main():
 
     for email in emails:
         
-        hash_id = hashlib.sha256(email.get("body").get("content").encode()).hexdigest()
 
         # Build the model first so the alternate key is derived by `Email.compute_alternate_key`.
         # Recomputing it here would hash the raw Graph timestamp ('...T10:30:00Z') instead of the
@@ -960,7 +732,7 @@ async def main():
 
         alternate_key = candidate_email.acc_email_alternatekey
 
-        logger.info(f"Processing email {email['id']} with alternate key {alternate_key}")
+        logger.info(f"Processing email from {candidate_email.acc_from_name} from {candidate_email.acc_receiveddatetime}")
 
         attachments = await get_email_attachments_from_inbox(config, email["id"])
 
@@ -968,10 +740,20 @@ async def main():
 
         if email_model is None:
 
-            logger.info(f"Email with alternate key  {alternate_key} does not yet exist")
 
             email_model = candidate_email
             email_model.acc_numofattachments = len(attachments)
+
+            logger.info(f"Email with alternate key {alternate_key} does not yet exist in Dataverse. However, it may be content-wise a duplicate. Checking for duplicates")
+
+            existing_email_id= get_email_id_by_hash_id(client, email_model.acc_hashid)
+
+            if existing_email_id:
+
+                logger.info(f"Email from {email_model.acc_from_name} is a duplicate to email with id {existing_email_id}")
+
+                email_model.acc_duplicate_emailid = existing_email_id
+
 
             logger.info(f"Upserting Email with  {email_model.acc_email_alternatekey}")
             
@@ -1005,25 +787,17 @@ async def main():
          # table but we need to check if the attachments exist in the GCS bucket
         for attachment in curated_attachments:
 
-             hash_id_attachment = hashlib.sha256(attachment.get("contentBytes").encode("utf-8")).hexdigest()
+            logger.info(f"Attachment with name {attachment["name"]} is attached to Email  from {email_model.acc_from_name}")
 
-             if not await attachment_exists_by_hash_id_dataverse(config,hash_id_attachment):
+            hash_id_attachment = hashlib.sha256(attachment.get("contentBytes").encode("utf-8")).hexdigest()
 
-                logger.info(f"Attachment {attachment["name"]} does not exist in Dataverse")
-                container_name = "accounts-payable"
-                directory = f"ingest/{email_model.acc_receiveddatetime_year}/{email_model.acc_receiveddatetime_month}"
-                file_name = attachment["name"]
+            
+            container_name = "accounts-payable"
+            directory = f"ingest/{email_model.acc_receiveddatetime_year}/{email_model.acc_receiveddatetime_month}"
+            file_name = attachment["name"]
+            storage_uri = f"{config.STORAGE_ACCOUNT_URL}/{container_name}/{directory}/{file_name}"
 
-                storage_uri = f"{config.STORAGE_ACCOUNT_URL}/{container_name}/{directory}/{file_name}"
-                
-                await upload_to_azure_datalake_storage(
-                     attachment["contentBytes"],
-                     attachment["contentType"],
-                     container_name,
-                     directory + "/" + file_name
-                 )
-
-                attachment_model = AttachmentFactory.create_attachment(
+            attachment_candidate = AttachmentFactory.create_attachment(
                                                 email=email_model,
                                                 hash_id=hash_id_attachment,
                                                 attachment_name=attachment['name'],
@@ -1034,12 +808,38 @@ async def main():
                                                 container=container_name
                                                 )
 
+            alternate_key = attachment_candidate.acc_attachment_alternatekey
+
+            attachment_model = await get_attachment_by_alternate_key_dataverse(alternate_key,client)
+
+
+            if attachment_model:
+          
+                logger.info(f"Attachment with alternate_key {alternate_key} already exists, skipping")
+
+            else:
+
+                print("Attachment does not yet exist by alternate_key, however it may be that there is an attachment with different alternate key but identical content")
+
+                attachment_model = attachment_candidate
+
+
+                existing_attachment_id = get_attachment_id_by_hash_id(client, attachment_model.acc_hashid)
+
+                if existing_attachment_id:
+
+                    attachment_model.acc_duplicate_attachmentid=existing_attachment_id
+
+                
+                await upload_to_azure_datalake_storage(
+                     attachment["contentBytes"],
+                     attachment["contentType"],
+                     container_name,
+                     directory + "/" + file_name
+                 )
 
                 attachment_model = await asyncio.to_thread(attachment_model.upsert_to_dataverse, client)
 
-             else:
-                 logger.info(f"Attachment with hashID {hash_id_attachment} already exists, skipping")
-    
     
 
 if __name__ == "__main__":

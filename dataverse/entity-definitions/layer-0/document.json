@@ -43,7 +43,7 @@
       "RequiredLevel": { "Value": "None", "CanBeChanged": true },
       "DisplayName": { "LocalizedLabels": [ { "Label": "VAT Amount", "LanguageCode": 1033 } ] },
       "Precision": 10,
-      "MinValue": 0,
+      "MinValue": -1000,
       "MaxValue":  99000000000
     },
     {
@@ -52,7 +52,7 @@
       "RequiredLevel": { "Value": "None", "CanBeChanged": true },
       "DisplayName": { "LocalizedLabels": [ { "Label": "Gross Amount", "LanguageCode": 1033 } ] },
       "Precision": 10,
-      "MinValue": 0,
+      "MinValue": -10000,
       "MaxValue":  99000000000
     },
     {
@@ -70,7 +70,7 @@
       "RequiredLevel": { "Value": "None", "CanBeChanged": true },
       "DisplayName": { "LocalizedLabels": [ { "Label": "Total Amount", "LanguageCode": 1033 } ] },
       "Precision": 10,
-      "MinValue": 0,
+      "MinValue": -10000,
       "MaxValue":  99000000000
     },
     {

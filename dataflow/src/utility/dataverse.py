@@ -97,7 +97,7 @@ async def get_attachments_to_upload_to_datev(client: AsyncDataverseClient)-> Asy
 
     pages = (client.query.builder("acc_attachment")
              .where(col("acc_uploadedtodatev")==False)
-             .where(col("_acc_duplicate_attachmentid_value").is_null())
+             .where(col("acc_duplicate_attachmentId").is_null())
              .execute_pages())
 
     async for page in pages:
@@ -113,6 +113,80 @@ def get_creditor_id_by_name(client: DataverseClient, creditor_name:str)-> str | 
 
     if record:
         return record.data["acc_creditorid"]
+    else:
+        return None
+
+def get_email_id_by_hash_id(client: DataverseClient, hash_id:str)-> str | None:
+    """
+    Check whether an email already exists in Dataverse for the given hash ID.
+
+    The hash ID ('acc_hashid') is derived from the email body, so two records
+    sharing it are content duplicates of each other. Use the returned GUID to
+    populate the 'acc_isduplicateof' lookup of the email being ingested.
+
+    Records that are themselves marked as duplicates are filtered out (the
+    'acc_isduplicateof' lookup has to be empty), so when several emails share a
+    hash ID only the original is returned instead of an arbitrary duplicate.
+    Lookup columns are filtered through their '_<logicalname>_value' form.
+
+    Args:
+        client: Dataverse client used to run the query
+        hash_id: The 'acc_hashid' of the email to look up
+
+    Returns:
+        The 'acc_emailid' of the existing original email with an identical hash
+        ID, or None when no such email exists.
+    """
+
+    records = (client.query.builder("acc_email")
+               .select("acc_emailid")
+               .where(col("acc_hashid")==hash_id)
+               .where(col("acc_duplicate_emailId").is_null())
+               .top(1)
+               .execute())
+
+    record = records.first()
+
+    if record:
+        return record.data["acc_emailid"]
+    else:
+        return None
+
+def get_attachment_id_by_hash_id(client: DataverseClient, hash_id:str)-> str | None:
+    """
+    Check whether an attachment already exists in Dataverse for the given hash ID.
+
+    Mirrors get_email_id_by_hash_id for the 'acc_attachment' table: the hash ID
+    ('acc_hashid') is derived from the attachment content, so two records sharing
+    it are content duplicates of each other. Use the returned GUID to populate
+    the 'acc_duplicate_attachmentId' lookup of the attachment being ingested.
+
+    Records that are themselves marked as duplicates are filtered out (the
+    'acc_duplicate_attachmentId' lookup has to be empty), so when several
+    attachments share a hash ID only the original is returned instead of an
+    arbitrary duplicate. Lookup columns are filtered through their
+    '_<logicalname>_value' form.
+
+    Args:
+        client: Dataverse client used to run the query
+        hash_id: The 'acc_hashid' of the attachment to look up
+
+    Returns:
+        The 'acc_attachmentid' of the existing original attachment with an
+        identical hash ID, or None when no such attachment exists.
+    """
+
+    records = (client.query.builder("acc_attachment")
+               .select("acc_attachmentid")
+               .where(col("acc_hashid")==hash_id)
+               .where(col("acc_duplicate_attachmentId").is_null())
+               .top(1)
+               .execute())
+
+    record = records.first()
+
+    if record:
+        return record.data["acc_attachmentid"]
     else:
         return None
 

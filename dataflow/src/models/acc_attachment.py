@@ -33,11 +33,11 @@ class Attachment(EntityBase):
         validation_alias=AliasChoices("acc_emailId", "acc_emailid","_acc_emailid_value"), # when requesting a record Lookup columns are resolved in this way
         serialization_alias="emailId@odata.bind"
     )
-    
-    acc_duplicate_attachmentId: Optional[str] = Field(
+ 
+    acc_duplicate_attachmentid: Optional[str] = Field(
         default=None,
         foreign_key="acc_attachment.acc_attachmentId",
-        validation_alias=AliasChoices("acc_duplicate_attachmentId", "acc_duplicate_attachmentid", "_acc_duplicate_attachmentid_value"),
+        validation_alias=AliasChoices("acc_duplicate_attachmentId", "acc_duplicate_attachmentid", "_acc_duplicate_attachmentid_value")
     )
     acc_hashid: str = Field(max_length=200)
     acc_processed_document_ai: bool = Field(default=False)

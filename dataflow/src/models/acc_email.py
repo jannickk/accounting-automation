@@ -1,6 +1,6 @@
 from typing import Optional
 from datetime import datetime
-from pydantic import AliasChoices, ConfigDict, Field, model_validator
+from pydantic import AliasChoices, ConfigDict, Field, model_validator, BaseModel
 import hashlib
 from PowerPlatform.Dataverse.client import DataverseClient
 
@@ -14,10 +14,10 @@ class Email(EntityBase):
 
 
     acc_outlook_emailid: str = Field(max_length=200)
-    acc_isduplicateof: Optional[str] = Field(
+    acc_duplicate_emailid: Optional[str] = Field(
         default=None,
         foreign_key="acc_email.acc_emailId",
-        validation_alias=AliasChoices("acc_isduplicateof", "_acc_isduplicateof_value"),
+        validation_alias=AliasChoices("acc_duplicate_emailId", "acc_duplicate_emailid","_acc_duplicate_emailid_value")
     )
     acc_subject: Optional[str] = Field(default=None, max_length=500)
     acc_numofattachments: Optional[int] = None
@@ -66,7 +66,6 @@ class Email(EntityBase):
         # Build an OData-compatible payload that converts lookup fields
         # into the `@odata.bind` form so Dataverse receives GUIDs/links
         record = self.convert_to_odata_payload()
-
         client.records.upsert(
             self.entity_logical_name,
             [
@@ -84,17 +83,26 @@ class Email(EntityBase):
 
     def convert_to_odata_payload(self) -> dict:
         """
-        Convert the Email instance to a dictionary suitable for OData payload.
-        Converts lookup fields into the OData bind format and includes the
-        computed alternate key. Mirrors the approach used by `Attachment`.
+        Convert the Attachment instance to a dictionary suitable for OData payload.
+        This method excludes the 'entity_logical_name' field, includes the computed
+        alternate key, and converts lookup fields into the OData bind format.
         """
-        record = self.model_dump(mode="json", exclude={"entity_logical_name","acc_body_contentbytes_b64","acc_emailId"}, exclude_none=True)
+        record = self.model_dump(mode="json", exclude={"entity_logical_name","conent_bytes"}, exclude_none=True)
+
+        ## the record will have the serialization_aliases
+
         record["acc_email_alternatekey"] = self.acc_email_alternatekey
 
         def extract_lookup_id(value, target_pk):
+
             if isinstance(value, str):
                 return value
+            
+            if isinstance(value, BaseModel):
+                return extract_lookup_id(value.model_dump(mode="json"), target_pk)
+            
             if isinstance(value, dict):
+
                 candidates = [target_pk, target_pk.lower(), target_pk.rstrip("Id"), "id"]
                 for key in candidates:
                     if key in value and isinstance(value[key], str):
@@ -102,16 +110,29 @@ class Email(EntityBase):
             return None
 
         payload = {}
+        
         for field_name, field_value in record.items():
-            field_info = self.model_fields.get(field_name)
-            foreign_key = getattr(field_info, "extra", {}).get("foreign_key") if field_info else None
-            if foreign_key and field_value is not None:
-                target_entity, target_pk = foreign_key.split(".", 1)
-                lookup_id = extract_lookup_id(field_value, target_pk)
-                if lookup_id:
-                    binding_collection = target_entity if target_entity.endswith("s") else f"{target_entity}s"
-                    payload[f"{field_name}@odata.bind"] = f"/{binding_collection}({lookup_id})"
-                    continue
+
+            field_info = Email.model_fields.get(field_name)
+
+            json_extra_schema = getattr(field_info, "json_schema_extra", {})
+
+            if json_extra_schema is not None:
+
+                foreign_key = json_extra_schema.get("foreign_key",None) if field_info else None
+
+                if foreign_key and field_value is not None:
+
+                    # acc_email.acc_emailId
+                    target_entity, target_pk = foreign_key.split(".", 1)
+
+                    # this would be target_pk
+                    lookup_id = extract_lookup_id(field_value, target_pk)
+
+                    if lookup_id:
+                        binding_collection = target_entity if target_entity.endswith("s") else f"{target_entity}s"
+                        payload[f"{field_name}@odata.bind"] = f"/{binding_collection}({lookup_id})"
+                        continue
             payload[field_name] = field_value
 
         return payload
@@ -123,6 +144,7 @@ class EmailFactory:
     def create_email(email: dict) -> Email:
         return Email(
             acc_outlook_emailid=email.get("id"),
+            acc_duplicate_emailid=email.get("_acc_duplicate_emailid_value") or email.get("acc_duplicate_emailid"),
             acc_subject=email.get("subject"),
             acc_numofattachments=email.get("numAttachments"),
             acc_receiveddatetime=datetime.fromisoformat(email.get("receivedDateTime").replace("Z", "+00:00")),
