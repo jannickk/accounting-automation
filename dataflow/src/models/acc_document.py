@@ -33,11 +33,11 @@ class Document(EntityBase):
     acc_invoice_day: Optional[int] = None
 
 
-    acc_net_amount: Optional[Decimal] = Field(default=None, ge=0, le=Decimal("99000000000"))
-    acc_vat_amount: Optional[Decimal] = Field(default=None, ge=0, le=Decimal("99000000000"))
-    acc_gross_amount: Optional[Decimal] = Field(default=None, ge=0, le=Decimal("99000000000"))
+    acc_net_amount: Optional[Decimal] = Field(default=None, ge=-1000, le=Decimal("99000000000"), decimal_places=10)
+    acc_vat_amount: Optional[Decimal] = Field(default=None, ge=-1000, le=Decimal("99000000000"), decimal_places=10)
+    acc_gross_amount: Optional[Decimal] = Field(default=None, ge=-10000, le=Decimal("99000000000"), decimal_places=10)
     acc_invoice_id: Optional[str] = Field(default=None, max_length=250)
-    acc_total_amount: Optional[Decimal] = Field(default=None, ge=0, le=Decimal("99000000000"))
+    acc_total_amount: Optional[Decimal] = Field(default=None, ge=-10000, le=Decimal("99000000000"), decimal_places=10)
     acc_supplier_tax_id: Optional[str] = Field(default=None, max_length=100)
     acc_transactioncurrencyId: str = Field(
                                                 ...,

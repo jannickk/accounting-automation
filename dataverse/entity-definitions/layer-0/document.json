@@ -34,7 +34,7 @@
       "RequiredLevel": { "Value": "None", "CanBeChanged": true },
       "DisplayName": { "LocalizedLabels": [ { "Label": "Net Amount", "LanguageCode": 1033 } ] },
       "Precision": 10,
-      "MinValue": 0,
+      "MinValue": -1000,
       "MaxValue":  99000000000
     },
     {

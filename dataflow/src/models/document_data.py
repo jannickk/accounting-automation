@@ -10,9 +10,9 @@ from annotated_types import Gt, Ge
 
 class PeriodOfService(BaseModel):
 
-   start_date: str
-   end_date: str
-
+   start_date: str | None
+   end_date: str | None 
+#  single purchase of goods has not start and end date
 class CurrenciesEnum(str, Enum):
 
     euro = 'EUR'

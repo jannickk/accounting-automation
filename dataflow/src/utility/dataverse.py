@@ -63,6 +63,7 @@ def get_unprocessed_documents_from_dataverse(client: DataverseClient)-> Generato
     records = client.query.builder("acc_attachment").where(col("acc_processed_document_ai")==False).execute()
 
     for record in records:
+        print(f"Yielding attachment {record}")
         yield Attachment.model_validate(record.to_dict())
     
 
@@ -71,7 +72,9 @@ def get_attachments_not_uploaded_to_datev(client: DataverseClient)-> Generator[A
 
     records = client.query.builder("acc_attachment").where(col("acc_uploadedtodatev")==False).execute()
 
+
     for record in records:
+        print(f"Yielding attachment {record.data['acc_name']} with ID {record.data['acc_attachmentid']}")
         yield Attachment.model_validate(record.to_dict())
 
 

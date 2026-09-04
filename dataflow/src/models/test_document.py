@@ -166,11 +166,16 @@ def test_document_alternate_key_tolerates_missing_invoice_date(minimal_document:
 
 
 @pytest.mark.parametrize(
-    "field_name",
-    ["acc_net_amount", "acc_vat_amount", "acc_gross_amount", "acc_total_amount"],
+    "field_name, min_value",
+    [
+        ("acc_net_amount", Decimal("0")),
+        ("acc_vat_amount", Decimal("-1000")),
+        ("acc_gross_amount", Decimal("-10000")),
+        ("acc_total_amount", Decimal("-10000")),
+    ],
 )
-def test_document_amount_bounds_are_enforced(field_name: str):
-    """All four decimal amounts are constrained to 0 .. 99,000,000,000."""
+def test_document_amount_bounds_are_enforced(field_name: str, min_value: Decimal):
+    """Each decimal amount is constrained to its schema-defined MinValue .. 99,000,000,000."""
 
     base = dict(
         acc_creditorId=CREDITOR_ID,
@@ -178,16 +183,16 @@ def test_document_amount_bounds_are_enforced(field_name: str):
         acc_transactioncurrencyId=CURRENCY_ID,
     )
 
-    # Negative amounts are rejected
+    # Amounts below the schema MinValue are rejected
     with pytest.raises(ValidationError):
-        Document(**base, **{field_name: Decimal("-0.01")})
+        Document(**base, **{field_name: min_value - Decimal("0.01")})
 
     # Amounts above the schema MaxValue are rejected
     with pytest.raises(ValidationError):
         Document(**base, **{field_name: Decimal("99000000000.01")})
 
     # The bounds themselves are inclusive
-    assert getattr(Document(**base, **{field_name: Decimal("0")}), field_name) == Decimal("0")
+    assert getattr(Document(**base, **{field_name: min_value}), field_name) == min_value
     assert getattr(
         Document(**base, **{field_name: Decimal("99000000000")}), field_name
     ) == Decimal("99000000000")
