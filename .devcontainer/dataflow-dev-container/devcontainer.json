@@ -1,0 +1,9 @@
+{
+    "$schema": "https://containers.dev/implementors/json_schema/#base-schema",
+    "name": "Accounting-Automation-Dataflow-Dev-Container",
+    "image": "mcr.microsoft.com/devcontainers/python:dev-3.14-bookworm",
+    "build": {
+        "dockerfile": "Dockerfile",
+    },
+    "postCreateCommand": "pip3 install --user -r dataflow/src/requirements.txt"
+}
